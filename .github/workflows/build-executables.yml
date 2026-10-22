@@ -1,0 +1,40 @@
+name: Build executables
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            name: windows-x64
+            command: npm run build:win
+          - os: ubuntu-latest
+            name: linux-x64-arm64
+            command: npm run build:linux
+          - os: macos-latest
+            name: macos-x64-arm64
+            command: npm run build:mac
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: ${{ matrix.command }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: team-mcp-manager-${{ matrix.name }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 30
+
