@@ -15,6 +15,7 @@
       <nav class="nav" aria-label="主导航">
         <button class="nav-item active" data-page="overview"><span class="nav-icon">▦</span>总览</button>
         <button class="nav-item" data-page="services"><span class="nav-icon">◈</span>MCP 服务<span class="nav-count" id="nav-service-count">0</span></button>
+        <button class="nav-item" data-page="publications"><span class="nav-icon">⇧</span>发布审批<span class="nav-count" id="nav-submission-count">0</span></button>
         <button class="nav-item" data-page="permissions"><span class="nav-icon">⌑</span>权限策略</button>
         <button class="nav-item" data-page="users"><span class="nav-icon">♙</span>用户与用户组</button>
         <button class="nav-item" data-page="audit"><span class="nav-icon">◷</span>操作审计</button>
@@ -48,6 +49,13 @@
           <div class="page-heading"><div><p class="eyebrow">目录与运行状态</p><h1>MCP 服务</h1><p class="subtitle">登记 MCP 地址，连接并同步真实工具清单，再为工具配置权限。</p></div><button class="button primary" data-action="add-service"><span>＋</span> 添加 MCP 服务</button></div>
           <div class="toolbar"><div class="search-box"><span>⌕</span><input id="service-search" type="search" placeholder="搜索服务名称或类别"></div><div class="filter-pills"><button class="filter-pill active" data-service-filter="all">全部</button><button class="filter-pill" data-service-filter="active">已启用</button><button class="filter-pill" data-service-filter="draft">草稿</button></div></div>
           <div id="service-grid" class="service-grid"></div>
+        </div>
+
+        <div id="page-publications" class="page">
+          <div class="page-heading"><div><p class="eyebrow">AI 工具接入与人工把关</p><h1>发布审批</h1><p class="subtitle">AI 工具可提交已部署 MCP 服务的上架申请；指定平台管理员审核后，才会登记进服务目录。</p></div></div>
+          <div class="permission-banner"><span>⇧</span><div><strong>AI 工具连接地址</strong><p>本机开发预览地址：<code id="manager-mcp-endpoint"></code>。工具只创建待审核申请，不会直接发布或执行安装命令。</p></div><button class="small-button" data-copy-mcp>复制地址</button></div>
+          <div class="permission-banner"><span>i</span><div><strong>当前为本机审核流程原型</strong><p>审核通过后服务先以草稿加入目录，管理员仍需同步工具并确认后启用。审核账号目前按指定的演示管理员账号校验；部署到公司服务器前，必须接入云之家登录，确保不能冒用审核人身份。</p></div></div>
+          <section class="panel audit-panel"><div class="panel-heading"><div><h2>待我审核与申请记录</h2><p>只有申请时指定的平台管理员可以处理该申请。</p></div><label class="reviewer-picker">当前演示审核账号<select id="reviewer-account"></select></label></div><div class="table-wrap"><table><thead><tr><th>服务与地址</th><th>申请人</th><th>指定审核人</th><th>提交时间</th><th>状态 / 意见</th><th>操作</th></tr></thead><tbody id="submissions-table"></tbody></table></div></section>
         </div>
 
         <div id="page-permissions" class="page">

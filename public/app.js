@@ -4,6 +4,7 @@ const $$ = (selector, parent = document) => [...parent.querySelectorAll(selector
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const icons = { '数据库': '▤', '业务系统': '◈', '文件与存储': '▧', '基础设施': '⌘', '开发工具': '⌘', '其他': '◇' };
 const labels = { draft: '草稿', active: '已启用', paused: '已暂停', allow: '允许', approval: '需审批', deny: '拒绝' };
+const submissionLabels = { pending: '待审核', approved: '已通过', rejected: '已驳回' };
 const fmtTime = value => new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(value));
 
 async function request(url, options = {}) {
@@ -70,11 +71,29 @@ function renderAudit() {
   const q = state.auditQuery.toLowerCase();
   $('#audit-table').innerHTML = state.data.audit.filter(a => `${a.actor} ${a.action} ${a.target} ${a.result}`.toLowerCase().includes(q)).map(a => `<tr><td>${fmtTime(a.time)}</td><td>${esc(a.actor)}</td><td>${esc(a.action)}</td><td>${esc(a.target)}</td><td><span class="result-badge ${a.result === '失败' ? 'failed' : ''}">${esc(a.result)}</span></td></tr>`).join('') || '<tr><td colspan="5" class="permission-empty">没有匹配的记录</td></tr>';
 }
-function render() { renderOverview(); renderServices(); renderPermissionSelectors(); renderUsers(); renderAudit(); }
+function renderPublications() {
+  const reviewers = state.data.users.filter(user => user.groupId === 'admins');
+  const select = $('#reviewer-account');
+  const selected = select.value;
+  select.innerHTML = reviewers.map(user => `<option value="${esc(user.account)}">${esc(user.name)}（${esc(user.account)}）</option>`).join('') || '<option value="">尚无平台管理员</option>';
+  if (reviewers.some(user => user.account === selected)) select.value = selected;
+  $('#manager-mcp-endpoint').textContent = `${location.origin}/mcp`;
+  const rows = [...(state.data.submissions || [])].sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+  $('#nav-submission-count').textContent = rows.filter(item => item.status === 'pending').length;
+  $('#submissions-table').innerHTML = rows.length ? rows.map(item => {
+    const isAssignedReviewer = item.reviewerAccount?.toLowerCase() === select.value.toLowerCase();
+    const actions = item.status === 'pending' && isAssignedReviewer
+      ? `<button class="small-button primary-small" data-review-submission="${esc(item.id)}" data-decision="approved">通过</button><button class="small-button" data-review-submission="${esc(item.id)}" data-decision="rejected">驳回</button>`
+      : item.status === 'pending' ? '<span class="muted">等待指定审核人</span>' : (item.serviceId ? '已登记草稿' : '—');
+    const review = item.reviewComment ? `<br><small>${esc(item.reviewComment)}</small>` : '';
+    return `<tr><td><strong>${esc(item.name)}</strong><br><small>${esc(item.endpoint)}</small></td><td>${esc(item.requesterAccount)}<br><small>AI 工具申报</small></td><td>${esc(item.reviewerAccount)}</td><td>${fmtTime(item.submittedAt)}</td><td><span class="status-tag ${esc(item.status)}">${esc(submissionLabels[item.status] || item.status)}</span>${review}</td><td>${actions}</td></tr>`;
+  }).join('') : '<tr><td colspan="6" class="permission-empty">还没有 AI 工具提交的 MCP 上架申请。</td></tr>';
+}
+function render() { renderOverview(); renderServices(); renderPermissionSelectors(); renderUsers(); renderAudit(); renderPublications(); }
 function showPage(name) {
   $$('.page').forEach(p => p.classList.toggle('active', p.id === `page-${name}`));
   $$('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.page === name));
-  $('#crumb-current').textContent = ({ overview: '总览', services: 'MCP 服务', permissions: '权限策略', users: '用户与用户组', audit: '操作审计' })[name] || name;
+  $('#crumb-current').textContent = ({ overview: '总览', services: 'MCP 服务', publications: '发布审批', permissions: '权限策略', users: '用户与用户组', audit: '操作审计' })[name] || name;
 }
 function openModal() { $('#modal-backdrop').hidden = false; $('input[name="name"]').focus(); }
 function closeModal() { $('#modal-backdrop').hidden = true; $('#service-form').reset(); }
@@ -111,6 +130,22 @@ document.addEventListener('click', async event => {
       await refresh(); toast(`已同步 ${result.tools.length} 个工具；请检查风险分类并配置权限`);
     } catch (e) { sync.disabled = false; sync.textContent = oldLabel; toast(e.message); }
   }
+  const review = event.target.closest('[data-review-submission]');
+  if (review) {
+    const decision = review.dataset.decision;
+    const comment = prompt(decision === 'rejected' ? '请填写驳回原因' : '审核意见（可留空）');
+    if (comment === null || (decision === 'rejected' && !comment.trim())) return;
+    try {
+      await request(`/api/submissions/${encodeURIComponent(review.dataset.reviewSubmission)}/review`, {
+        method: 'POST', body: JSON.stringify({ decision, reviewerAccount: $('#reviewer-account').value, comment })
+      });
+      await refresh(); toast(decision === 'approved' ? '审核通过，服务已登记为草稿' : '申请已驳回');
+    } catch (e) { toast(e.message); }
+  }
+  if (event.target.closest('[data-copy-mcp]')) {
+    try { await navigator.clipboard.writeText(`${location.origin}/mcp`); toast('MCP 地址已复制'); }
+    catch { toast('复制失败，请手动复制页面显示的地址'); }
+  }
   const filter = event.target.closest('[data-service-filter]');
   if (filter) { state.serviceFilter = filter.dataset.serviceFilter; $$('.filter-pill').forEach(x => x.classList.toggle('active', x === filter)); renderServices(); }
 });
@@ -126,6 +161,7 @@ $('#permission-list').addEventListener('change', async event => {
   try { await request('/api/grants', { method: 'POST', body: JSON.stringify({ groupId: $('#permission-group').value, serviceId: $('#permission-service').value, toolName: select.dataset.grantTool, mode: select.value }) }); await refresh(); toast('权限策略已保存'); }
   catch (e) { toast(e.message); await refresh(); }
 });
+$('#reviewer-account').addEventListener('change', renderPublications);
 $('#service-search').addEventListener('input', e => { state.serviceQuery = e.target.value; renderServices(); });
 $('#user-search').addEventListener('input', e => { state.userQuery = e.target.value.toLowerCase(); renderUsers(); });
 $('#audit-search').addEventListener('input', e => { state.auditQuery = e.target.value.toLowerCase(); renderAudit(); });

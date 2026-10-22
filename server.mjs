@@ -48,6 +48,7 @@ const seed = {
     { groupId: 'ops', serviceId: 'sqlserver', toolName: 'execute_write', mode: 'approval' },
     { groupId: 'ops', serviceId: 'sqlserver', toolName: 'delete_records', mode: 'approval' }
   ],
+  submissions: [],
   audit: [
     { id: 'a1', time: new Date().toISOString(), actor: '系统', action: '初始化演示数据', target: '管理器', result: '成功' },
     { id: 'a2', time: new Date(Date.now() - 3600_000).toISOString(), actor: '管理员', action: '查看权限策略', target: '数据服务', result: '成功' }
@@ -56,7 +57,10 @@ const seed = {
 
 async function loadState() {
   await fs.mkdir(dataDir, { recursive: true });
-  try { return JSON.parse(await fs.readFile(dataFile, 'utf8')); }
+  try {
+    const stored = JSON.parse(await fs.readFile(dataFile, 'utf8'));
+    return { ...structuredClone(seed), ...stored, submissions: Array.isArray(stored.submissions) ? stored.submissions : [] };
+  }
   catch (error) {
     if (error.code !== 'ENOENT') throw error;
     await saveState(seed);
@@ -102,6 +106,7 @@ async function readLimited(response, maxBytes = 1024 * 1024) {
   return new TextDecoder().decode(bytes);
 }
 const modernProtocol = '2026-07-28';
+const legacyProtocols = ['2025-11-25', '2025-06-18', '2025-03-26'];
 const clientInfo = { name: 'team-mcp-manager', version: '0.1.0' };
 function modernMeta() {
   return {
@@ -217,6 +222,133 @@ async function discoverMcpTools(service) {
     risk: tool.annotations?.readOnlyHint === true ? '只读' : tool.annotations?.destructiveHint === true ? '高风险' : '写入'
   }));
 }
+const publicationToolDefinitions = [
+  {
+    name: 'list_mcp_reviewers',
+    title: '列出可选审核人',
+    description: '返回已登记的平台管理员账号，供申请人指定审核人。',
+    inputSchema: { type: 'object', additionalProperties: false, properties: {} }
+  },
+  {
+    name: 'submit_mcp_publication',
+    title: '提交 MCP 上架审核',
+    description: '提交已部署 MCP 服务的上架申请。申请必须指定平台管理员审核；审核通过后仅登记到服务目录，不会执行安装命令或直接开放工具调用。',
+    inputSchema: {
+      type: 'object', additionalProperties: false,
+      properties: {
+        name: { type: 'string', minLength: 1, maxLength: 80, description: 'MCP 服务名称' },
+        category: { type: 'string', enum: ['数据库', '业务系统', '文件与存储', '基础设施', '开发工具', '其他'] },
+        endpoint: { type: 'string', minLength: 1, maxLength: 500, description: '服务已部署后的 Streamable HTTP 地址' },
+        description: { type: 'string', maxLength: 300, description: '用途、数据范围和风险说明' },
+        requesterAccount: { type: 'string', minLength: 1, maxLength: 120, description: '申请人公司账号；当前为自报字段，待云之家身份验证接入' },
+        reviewerAccount: { type: 'string', minLength: 1, maxLength: 120, description: '负责审核的平台管理员账号' }
+      },
+      required: ['name', 'category', 'endpoint', 'description', 'requesterAccount', 'reviewerAccount']
+    }
+  },
+  {
+    name: 'get_mcp_publication_status',
+    title: '查询 MCP 上架申请状态',
+    description: '按申请编号查询审核状态、审核意见和登记结果。',
+    inputSchema: {
+      type: 'object', additionalProperties: false,
+      properties: { submissionId: { type: 'string', minLength: 1, maxLength: 80, description: '申请编号' } },
+      required: ['submissionId']
+    }
+  }
+];
+const serviceCategories = new Set(['数据库', '业务系统', '文件与存储', '基础设施', '开发工具', '其他']);
+function validatePublicationInput(input, state) {
+  const name = typeof input.name === 'string' ? input.name.trim() : '';
+  const category = input.category;
+  const description = typeof input.description === 'string' ? input.description.trim() : '';
+  const requesterAccount = typeof input.requesterAccount === 'string' ? input.requesterAccount.trim() : '';
+  const reviewerAccount = typeof input.reviewerAccount === 'string' ? input.reviewerAccount.trim() : '';
+  if (!name || name.length > 80 || !serviceCategories.has(category) || description.length > 300 || !requesterAccount || requesterAccount.length > 120) {
+    throw new Error('申请信息无效；请检查名称、类别、说明和申请人账号');
+  }
+  let endpoint;
+  try { endpoint = new URL(String(input.endpoint || '').trim()); }
+  catch { throw new Error('请填写有效的 MCP HTTP 或 HTTPS 地址'); }
+  if (!['http:', 'https:'].includes(endpoint.protocol) || endpoint.username || endpoint.password) throw new Error('服务地址仅支持不含账号密码的 HTTP 或 HTTPS URL');
+  const reviewer = state.users.find(user => user.account.toLowerCase() === reviewerAccount.toLowerCase());
+  if (!reviewer || reviewer.groupId !== 'admins') throw new Error('审核人必须是已登记的平台管理员');
+  if (state.services.some(service => service.endpoint === endpoint.href) || state.submissions.some(item => item.endpoint === endpoint.href && item.status === 'pending')) {
+    throw new Error('该服务地址已登记或已有待审核申请');
+  }
+  return { name, category, endpoint: endpoint.href, description, requesterAccount, reviewerAccount: reviewer.account };
+}
+async function handleMcp(req, res) {
+  const origin = req.headers.origin;
+  if (origin) {
+    let parsed;
+    try { parsed = new URL(origin); } catch { return json(res, 403, { error: '来源地址无效' }); }
+    if (!['localhost', '127.0.0.1', '::1'].includes(parsed.hostname) || Number(parsed.port || 80) !== port) return json(res, 403, { error: '禁止此来源访问 MCP 管理接口' });
+  }
+  const message = await readBody(req);
+  if (!message || message.jsonrpc !== '2.0' || typeof message.method !== 'string') return json(res, 400, { error: 'MCP JSON-RPC 请求格式无效' });
+  const hasId = Object.hasOwn(message, 'id');
+  if (hasId && typeof message.id !== 'string' && !Number.isInteger(message.id)) return json(res, 400, { error: 'MCP JSON-RPC 请求编号无效' });
+  if (!hasId && message.method !== 'notifications/initialized') return json(res, 400, { error: 'MCP 请求缺少编号' });
+  const params = message.params || {};
+  const requestMeta = params._meta || {};
+  const requestedVersion = requestMeta['io.modelcontextprotocol/protocolVersion'];
+  const protocolHeader = req.headers['mcp-protocol-version'];
+  if (requestedVersion && requestedVersion !== modernProtocol) {
+    return json(res, 400, { jsonrpc: '2.0', id: message.id, error: { code: -32022, message: '不支持的 MCP 协议版本', data: { supported: [modernProtocol], requested: requestedVersion || protocolHeader } } });
+  }
+  if (protocolHeader && protocolHeader !== modernProtocol && !legacyProtocols.includes(protocolHeader)) {
+    return json(res, 400, { jsonrpc: '2.0', id: message.id, error: { code: -32022, message: '不支持的 MCP 协议版本', data: { supported: [modernProtocol, ...legacyProtocols], requested: protocolHeader } } });
+  }
+  const modern = requestedVersion === modernProtocol || protocolHeader === modernProtocol;
+  if (modern) {
+    if (requestedVersion !== modernProtocol || protocolHeader !== modernProtocol || req.headers['mcp-method'] !== message.method) {
+      return json(res, 400, { jsonrpc: '2.0', id: message.id, error: { code: -32020, message: 'MCP 请求头与请求内容不匹配' } });
+    }
+    if (message.method === 'tools/call' && req.headers['mcp-name'] !== params.name) {
+      return json(res, 400, { jsonrpc: '2.0', id: message.id, error: { code: -32020, message: 'Mcp-Name 请求头与工具名称不匹配' } });
+    }
+  }
+  const respond = (result, status = 200) => {
+    const body = { jsonrpc: '2.0', id: message.id, result };
+    if (modern) body._meta = { 'io.modelcontextprotocol/serverInfo': { name: 'team-mcp-manager', version: '0.1.0' } };
+    res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+    res.end(JSON.stringify(body));
+  };
+  const rpcError = (code, text) => json(res, 200, { jsonrpc: '2.0', id: message.id, error: { code, message: text } });
+  if (message.method === 'server/discover' && modern) return respond({ supportedVersions: [modernProtocol], capabilities: { tools: { listChanged: false } }, instructions: '使用 submit_mcp_publication 提交服务上架申请；所有申请须经指定的平台管理员审核。' });
+  if (message.method === 'initialize' && !modern) {
+    const requestedLegacy = params.protocolVersion;
+    const negotiatedVersion = legacyProtocols.includes(requestedLegacy) ? requestedLegacy : legacyProtocols[0];
+    return respond({ protocolVersion: negotiatedVersion, capabilities: { tools: { listChanged: false } }, serverInfo: { name: 'team-mcp-manager', version: '0.1.0' } });
+  }
+  if (message.method === 'notifications/initialized' && !modern) { res.writeHead(202); return res.end(); }
+  if (message.method === 'tools/list') return respond({ tools: publicationToolDefinitions });
+  if (message.method !== 'tools/call') return rpcError(-32601, '不支持的 MCP 方法');
+  if (typeof params.name !== 'string' || !params.arguments || typeof params.arguments !== 'object' || Array.isArray(params.arguments)) return rpcError(-32602, '工具名称或参数无效');
+  const input = params.arguments;
+  const state = await loadState();
+  if (params.name === 'list_mcp_reviewers') {
+    const reviewers = state.users.filter(user => user.groupId === 'admins').map(user => ({ name: user.name, account: user.account }));
+    return respond({ content: [{ type: 'text', text: JSON.stringify(reviewers) }] });
+  }
+  if (params.name === 'submit_mcp_publication') {
+    try {
+      const values = validatePublicationInput(input, state);
+      const submission = { id: randomUUID(), ...values, status: 'pending', submittedAt: new Date().toISOString(), reviewedAt: null, reviewedBy: null, reviewComment: '', serviceId: null };
+      state.submissions.unshift(submission);
+      audit(state, `AI 工具（自报 ${values.requesterAccount}）`, '提交 MCP 上架审核', `${values.name} → ${values.reviewerAccount}`, '待审核');
+      await saveState(state);
+      return respond({ content: [{ type: 'text', text: JSON.stringify({ submissionId: submission.id, status: submission.status, reviewerAccount: submission.reviewerAccount, message: '申请已提交；审核通过前不会登记为可用服务。' }) }] });
+    } catch (error) { return respond({ content: [{ type: 'text', text: error.message }], isError: true }); }
+  }
+  if (params.name === 'get_mcp_publication_status') {
+    const submission = state.submissions.find(item => item.id === input.submissionId);
+    if (!submission) return respond({ content: [{ type: 'text', text: '未找到该申请编号。' }], isError: true });
+    return respond({ content: [{ type: 'text', text: JSON.stringify({ submissionId: submission.id, name: submission.name, status: submission.status, reviewerAccount: submission.reviewerAccount, reviewedAt: submission.reviewedAt, reviewComment: submission.reviewComment, serviceId: submission.serviceId }) }] });
+  }
+  return rpcError(-32602, '不支持的工具名称');
+}
 function audit(state, actor, action, target, result = '成功') {
   state.audit.unshift({ id: randomUUID(), time: new Date().toISOString(), actor, action, target, result });
   state.audit = state.audit.slice(0, 200);
@@ -264,6 +396,38 @@ async function api(req, res, url) {
       return json(res, 502, { error: error.name === 'TimeoutError' ? '连接 MCP 服务超时（15 秒）' : error.message || '无法连接 MCP 服务' });
     }
   }
+  if (req.method === 'POST' && url.pathname.startsWith('/api/submissions/') && url.pathname.endsWith('/review')) {
+    const id = decodeURIComponent(url.pathname.split('/').at(-2));
+    const submission = state.submissions.find(item => item.id === id);
+    if (!submission) return json(res, 404, { error: '未找到上架申请' });
+    if (submission.status !== 'pending') return json(res, 409, { error: '该申请已经审核，不能重复处理' });
+    const body = await readBody(req);
+    const reviewerAccount = typeof body.reviewerAccount === 'string' ? body.reviewerAccount.trim() : '';
+    const reviewer = state.users.find(user => user.account.toLowerCase() === reviewerAccount.toLowerCase());
+    if (!reviewer || reviewer.groupId !== 'admins' || reviewer.account.toLowerCase() !== submission.reviewerAccount.toLowerCase()) {
+      return json(res, 403, { error: '只有指定的平台管理员审核人可以处理此申请' });
+    }
+    if (!['approved', 'rejected'].includes(body.decision)) return json(res, 400, { error: '审核结论无效' });
+    const comment = typeof body.comment === 'string' ? body.comment.trim().slice(0, 500) : '';
+    if (body.decision === 'rejected' && !comment) return json(res, 400, { error: '驳回申请时请填写审核意见' });
+    if (body.decision === 'approved') {
+      if (state.services.some(service => service.endpoint === submission.endpoint)) return json(res, 409, { error: '该服务地址已经登记，请先处理现有服务' });
+      const service = {
+        id: randomUUID(), name: submission.name, category: submission.category,
+        endpoint: submission.endpoint, transport: 'Streamable HTTP', status: 'draft',
+        description: submission.description, tools: [], publicationSubmissionId: submission.id
+      };
+      state.services.unshift(service);
+      submission.serviceId = service.id;
+    }
+    submission.status = body.decision;
+    submission.reviewedAt = new Date().toISOString();
+    submission.reviewedBy = reviewer.account;
+    submission.reviewComment = comment;
+    audit(state, reviewer.account, body.decision === 'approved' ? '审核通过 MCP 上架申请' : '驳回 MCP 上架申请', `${submission.name}（申请人：${submission.requesterAccount}）${body.decision === 'approved' ? '；已登记为草稿' : ''}`);
+    await saveState(state);
+    return json(res, 200, submission);
+  }
   if (req.method === 'POST' && url.pathname === '/api/grants') {
     const body = await readBody(req);
     if (!['allow', 'approval', 'deny'].includes(body.mode)) return json(res, 400, { error: '权限状态无效' });
@@ -306,7 +470,11 @@ async function staticFile(req, res, url) {
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${host}:${port}`);
-    if (url.pathname.startsWith('/api/')) await api(req, res, url);
+    if (url.pathname === '/mcp') {
+      if (req.method !== 'POST') { res.writeHead(405, { allow: 'POST' }); return res.end(); }
+      await handleMcp(req, res);
+    }
+    else if (url.pathname.startsWith('/api/')) await api(req, res, url);
     else await staticFile(req, res, url);
   } catch (error) {
     json(res, error instanceof SyntaxError ? 400 : 500, { error: error instanceof SyntaxError ? 'JSON 格式无效' : '请求处理失败' });
