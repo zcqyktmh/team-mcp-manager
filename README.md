@@ -32,7 +32,7 @@ npm run build:all
 
 只构建单个平台时，可使用 `npm run build:win`、`npm run build:mac` 或 `npm run build:linux`。双击/运行相应程序后会启动本机管理器并尝试打开浏览器；如果没有自动打开，请访问 `http://127.0.0.1:4173`。运行数据按操作系统和当前用户分别保存：Windows 在 `%LOCALAPPDATA%\TeamMcpManager\data\manager.json`，macOS 在 `~/Library/Application Support/team-mcp-manager/data/manager.json`，Linux 在 `$XDG_DATA_HOME/team-mcp-manager/data/manager.json`（未设置 `XDG_DATA_HOME` 时使用 `~/.local/share`）。
 
-GitHub Actions 会在 Windows、macOS 和 Linux 构建机上分别构建并提供可下载的构建产物。macOS 版本需要遵从 macOS 的应用安全提示；如需正式对外分发，后续还应配置 Apple Developer ID 签名与公证。
+GitHub Actions 会在 Windows、macOS 和 Linux 构建机上分别构建并提供可下载的构建产物。当前 macOS 二进制没有签名，系统可能阻止启动；需在 Mac 上先进行 ad-hoc 签名，正式分发则应配置 Apple Developer ID 签名与公证。
 
 ## 开发模式本机运行
 
