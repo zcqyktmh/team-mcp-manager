@@ -1,12 +1,23 @@
 import http from 'node:http';
+import { execFile } from 'node:child_process';
 import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(root, 'public');
-const dataDir = path.join(root, 'data');
+const packaged = Boolean(process.pkg);
+const userDataRoot = process.platform === 'win32'
+  ? (process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local'))
+  : process.platform === 'darwin'
+    ? path.join(os.homedir(), 'Library', 'Application Support')
+    : (process.env.XDG_DATA_HOME || path.join(os.homedir(), '.local', 'share'));
+const appDataDirName = process.platform === 'win32' ? 'TeamMcpManager' : 'team-mcp-manager';
+const dataDir = packaged
+  ? path.join(userDataRoot, appDataDirName, 'data')
+  : path.join(root, 'data');
 const dataFile = path.join(dataDir, 'manager.json');
 const host = '127.0.0.1';
 const port = Number(process.env.MCP_MANAGER_PORT || 4173);
@@ -145,5 +156,15 @@ const server = http.createServer(async (req, res) => {
     json(res, error instanceof SyntaxError ? 400 : 500, { error: error instanceof SyntaxError ? 'JSON 格式无效' : '请求处理失败' });
   }
 });
-server.listen(port, host, () => console.log(`MCP 管理器本机原型已启动：http://${host}:${port}`));
+server.listen(port, host, () => {
+  const url = `http://${host}:${port}`;
+  console.log(`MCP 管理器本机原型已启动：${url}`);
+  if (packaged && !process.env.MCP_MANAGER_NO_OPEN) {
+    const command = process.platform === 'win32' ? 'cmd.exe' : process.platform === 'darwin' ? 'open' : 'xdg-open';
+    const args = process.platform === 'win32' ? ['/d', '/s', '/c', `start "" "${url}"`] : [url];
+    execFile(command, args, { windowsHide: true }, error => {
+      if (error) console.log(`请在浏览器打开 ${url}`);
+    });
+  }
+});
 
