@@ -81,6 +81,142 @@ async function readBody(req) {
   }
   return raw ? JSON.parse(raw) : {};
 }
+async function readLimited(response, maxBytes = 1024 * 1024) {
+  if (!response.body) return '';
+  const reader = response.body.getReader();
+  const chunks = [];
+  let size = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > maxBytes) {
+      await reader.cancel();
+      throw new Error('MCP 响应超过 1 MB 限制');
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+  return new TextDecoder().decode(bytes);
+}
+const modernProtocol = '2026-07-28';
+const clientInfo = { name: 'team-mcp-manager', version: '0.1.0' };
+function modernMeta() {
+  return {
+    'io.modelcontextprotocol/protocolVersion': modernProtocol,
+    'io.modelcontextprotocol/clientInfo': clientInfo,
+    'io.modelcontextprotocol/clientCapabilities': {}
+  };
+}
+async function mcpRequest(endpoint, message, { sessionId, protocolVersion, modern = false } = {}) {
+  const headers = {
+    'content-type': 'application/json',
+    accept: 'application/json, text/event-stream'
+  };
+  if (sessionId) headers['mcp-session-id'] = sessionId;
+  if (modern) {
+    headers['mcp-protocol-version'] = protocolVersion;
+    headers['mcp-method'] = message.method;
+  }
+  const response = await fetch(endpoint, {
+    method: 'POST', headers, body: JSON.stringify(message),
+    redirect: 'error', signal: AbortSignal.timeout(15_000)
+  });
+  if (response.status === 401 || response.status === 403) throw new Error('服务要求身份验证；凭据与员工身份接入尚未完成');
+  if (response.status === 202) return { sessionId: response.headers.get('mcp-session-id') || sessionId, result: null };
+  const text = await readLimited(response);
+  let payload;
+  const contentType = response.headers.get('content-type') || '';
+  if (text && contentType.includes('text/event-stream')) {
+    const messages = text.split(/\r?\n/).filter(line => line.startsWith('data:')).map(line => line.slice(5).trim()).filter(Boolean);
+    payload = messages.map(line => { try { return JSON.parse(line); } catch { return null; } }).find(item => item?.id === message.id);
+  } else if (text) {
+    try { payload = JSON.parse(text); } catch {
+      if (!response.ok) {
+        const error = new Error(`MCP 服务返回 HTTP ${response.status}`);
+        error.httpStatus = response.status;
+        throw error;
+      }
+      throw new Error('MCP 服务返回了无效响应');
+    }
+  }
+  if (!response.ok) {
+    const error = new Error(payload?.error?.message || `MCP 服务返回 HTTP ${response.status}`);
+    error.httpStatus = response.status;
+    error.rpcError = payload?.error;
+    throw error;
+  }
+  if (message.id !== undefined && !payload) throw new Error('MCP 服务未返回对应请求的结果');
+  if (payload?.error) {
+    const error = new Error(payload.error.message || 'MCP 请求失败');
+    error.rpcError = payload.error;
+    throw error;
+  }
+  return { sessionId: response.headers.get('mcp-session-id') || sessionId, result: payload?.result ?? null };
+}
+async function listMcpTools(endpoint, { modern, sessionId } = {}) {
+  const tools = [];
+  const seenCursors = new Set();
+  let cursor;
+  for (let page = 0; page < 100; page += 1) {
+    const params = { ...(cursor ? { cursor } : {}), ...(modern ? { _meta: modernMeta() } : {}) };
+    const response = await mcpRequest(endpoint, { jsonrpc: '2.0', id: page + 2, method: 'tools/list', params }, { sessionId, protocolVersion: modern ? modernProtocol : undefined, modern });
+    if (!Array.isArray(response.result?.tools)) throw new Error('MCP 服务未提供有效的工具清单');
+    tools.push(...response.result.tools);
+    cursor = response.result.nextCursor;
+    if (!cursor) return tools;
+    if (typeof cursor !== 'string' || seenCursors.has(cursor)) throw new Error('MCP 服务返回了无效的工具分页游标');
+    seenCursors.add(cursor);
+  }
+  throw new Error('MCP 工具清单超过 100 页，已停止同步');
+}
+async function discoverMcpTools(service) {
+  let endpoint;
+  try { endpoint = new URL(service.endpoint); }
+  catch { throw new Error('请先填写有效的 HTTP 或 HTTPS MCP 地址'); }
+  if (!['http:', 'https:'].includes(endpoint.protocol) || endpoint.username || endpoint.password) {
+    throw new Error('服务地址仅支持不含账号密码的 HTTP 或 HTTPS URL');
+  }
+  let tools;
+  let modernError;
+  try {
+    const discovered = await mcpRequest(endpoint, {
+      jsonrpc: '2.0', id: 1, method: 'server/discover', params: { _meta: modernMeta() }
+    }, { protocolVersion: modernProtocol, modern: true });
+    const versions = discovered.result?.supportedVersions;
+    if (!Array.isArray(versions) || !versions.includes(modernProtocol)) throw new Error('MCP 服务没有声明支持当前协议版本');
+    if (!discovered.result?.capabilities?.tools) return [];
+    tools = await listMcpTools(endpoint, { modern: true });
+  } catch (error) {
+    if (Number.isInteger(error.rpcError?.code) && error.rpcError.code <= -32000 && error.rpcError.code >= -32099) {
+      throw new Error(error.rpcError.code === -32022 ? 'MCP 服务要求的协议版本当前不受支持' : `MCP 协议请求被服务拒绝：${error.message}`);
+    }
+    const legacyCandidate = [400, 404, 405].includes(error.httpStatus) || error.rpcError?.code === -32601;
+    if (!legacyCandidate) throw error;
+    modernError = error;
+    try {
+      const init = await mcpRequest(endpoint, {
+        jsonrpc: '2.0', id: 1, method: 'initialize',
+        params: { protocolVersion: '2025-03-26', capabilities: {}, clientInfo }
+      });
+      if (!init.result) throw new Error('旧版 MCP 初始化未返回服务信息');
+      if (!init.result.capabilities?.tools) return [];
+      await mcpRequest(endpoint, { jsonrpc: '2.0', method: 'notifications/initialized' }, { sessionId: init.sessionId });
+      tools = await listMcpTools(endpoint, { sessionId: init.sessionId });
+    } catch (legacyError) {
+      throw new Error(`新旧 MCP 协议均未能连接：${legacyError.message || modernError.message}`);
+    }
+  }
+  const uniqueTools = new Map();
+  for (const tool of tools.filter(tool => typeof tool.name === 'string' && /^[a-zA-Z0-9_.-]{1,80}$/.test(tool.name))) uniqueTools.set(tool.name, tool);
+  return [...uniqueTools.values()].map(tool => ({
+    name: tool.name,
+    label: typeof tool.title === 'string' ? tool.title.slice(0, 120) : (typeof tool.description === 'string' ? tool.description.slice(0, 120) : tool.name),
+    risk: tool.annotations?.readOnlyHint === true ? '只读' : tool.annotations?.destructiveHint === true ? '高风险' : '写入'
+  }));
+}
 function audit(state, actor, action, target, result = '成功') {
   state.audit.unshift({ id: randomUUID(), time: new Date().toISOString(), actor, action, target, result });
   state.audit = state.audit.slice(0, 200);
@@ -107,6 +243,26 @@ async function api(req, res, url) {
     audit(state, '本地管理员', '更新 MCP 配置', service.name);
     await saveState(state);
     return json(res, 200, service);
+  }
+  if (req.method === 'POST' && url.pathname.startsWith('/api/services/') && url.pathname.endsWith('/discover')) {
+    const id = decodeURIComponent(url.pathname.split('/').at(-2));
+    const service = state.services.find(x => x.id === id);
+    if (!service) return json(res, 404, { error: '未找到服务' });
+    try {
+      const tools = await discoverMcpTools(service);
+      const names = new Set(tools.map(tool => tool.name));
+      const oldGrantCount = state.grants.length;
+      state.grants = state.grants.filter(grant => grant.serviceId !== service.id || names.has(grant.toolName));
+      service.tools = tools;
+      service.toolSyncAt = new Date().toISOString();
+      audit(state, '本地管理员', '同步 MCP 工具清单', `${service.name}（${tools.length} 个工具，清除 ${oldGrantCount - state.grants.length} 条失效授权）`);
+      await saveState(state);
+      return json(res, 200, { tools, syncedAt: service.toolSyncAt });
+    } catch (error) {
+      audit(state, '本地管理员', '同步 MCP 工具清单', service.name, '失败');
+      await saveState(state);
+      return json(res, 502, { error: error.name === 'TimeoutError' ? '连接 MCP 服务超时（15 秒）' : error.message || '无法连接 MCP 服务' });
+    }
   }
   if (req.method === 'POST' && url.pathname === '/api/grants') {
     const body = await readBody(req);
