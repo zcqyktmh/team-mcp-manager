@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>MCP 管理器</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-mark">M</div><div><strong>Company MCP</strong><span>管理控制台</span></div></div>
+      <div class="workspace-label">工作空间</div>
+      <nav class="nav" aria-label="主导航">
+        <button class="nav-item active" data-page="overview"><span class="nav-icon">▦</span>总览</button>
+        <button class="nav-item" data-page="services"><span class="nav-icon">◈</span>MCP 服务<span class="nav-count" id="nav-service-count">0</span></button>
+        <button class="nav-item" data-page="permissions"><span class="nav-icon">⌑</span>权限策略</button>
+        <button class="nav-item" data-page="users"><span class="nav-icon">♙</span>用户与用户组</button>
+        <button class="nav-item" data-page="audit"><span class="nav-icon">◷</span>操作审计</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="phase-card"><span class="phase-dot"></span><div><strong>本机开发预览</strong><small>管理器第一阶段</small></div></div>
+        <div class="profile"><div class="avatar">管</div><div class="profile-info"><strong>本地管理员</strong><small>演示环境</small></div><span class="profile-menu">•••</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar"><div class="breadcrumbs"><span>公司 MCP</span><i>/</i><strong id="crumb-current">总览</strong></div><div class="top-actions"><span class="environment-pill"><b></b>本机预览</span><button class="icon-button" title="通知" aria-label="通知">♧</button><div class="top-avatar">管</div></div></header>
+      <section class="content">
+        <div id="page-overview" class="page active">
+          <div class="page-heading"><div><p class="eyebrow">工作空间概况</p><h1>管理器总览</h1><p class="subtitle">集中查看 MCP 服务、访问策略和近期管理活动。</p></div><button class="button primary" data-action="add-service"><span>＋</span> 添加 MCP 服务</button></div>
+          <div class="notice"><span class="notice-icon">i</span><div><strong>当前为本机开发预览</strong><p>账号、服务和授权数据保存在本机演示文件中。云之家登录、远程网关和真实权限拦截将在后续阶段接入。</p></div><button class="notice-close" aria-label="关闭提示">×</button></div>
+          <div class="stats-grid">
+            <article class="stat-card"><div class="stat-top"><span>已登记服务</span><span class="stat-icon purple">◈</span></div><div class="stat-value" id="stat-services">—</div><div class="stat-foot"><span class="muted">包含草稿和计划接入</span></div></article>
+            <article class="stat-card"><div class="stat-top"><span>可用工具</span><span class="stat-icon blue">⌘</span></div><div class="stat-value" id="stat-tools">—</div><div class="stat-foot"><span class="muted">已登记工具定义</span></div></article>
+            <article class="stat-card"><div class="stat-top"><span>用户组</span><span class="stat-icon teal">♙</span></div><div class="stat-value" id="stat-groups">—</div><div class="stat-foot"><span class="muted">权限按用户组配置</span></div></article>
+            <article class="stat-card"><div class="stat-top"><span>待审批策略</span><span class="stat-icon amber">⌑</span></div><div class="stat-value" id="stat-approval">—</div><div class="stat-foot"><span class="muted">需后续接入审批流程</span></div></article>
+          </div>
+          <div class="dashboard-grid">
+            <section class="panel service-panel"><div class="panel-heading"><div><h2>服务目录</h2><p>管理公司统一提供的 MCP 服务</p></div><button class="text-button" data-nav="services">查看全部 <span>→</span></button></div><div id="overview-services" class="overview-service-list"></div></section>
+            <section class="panel activity-panel"><div class="panel-heading"><div><h2>最近活动</h2><p>管理配置的本地演示记录</p></div><button class="text-button" data-nav="audit">查看审计 <span>→</span></button></div><div id="overview-audit" class="activity-list"></div></section>
+          </div>
+          <section class="panel next-panel"><div class="next-icon">✦</div><div class="next-copy"><span class="eyebrow">实施进度</span><h2>从服务登记开始，逐步接入身份与网关</h2><p>下一步将接入云之家用户身份和远程 MCP 网关，再把 SQL Server 作为首个真实服务上线。</p></div><div class="step-track"><div class="step done"><span>1</span><small>管理界面</small></div><i></i><div class="step current"><span>2</span><small>权限后端</small></div><i></i><div class="step"><span>3</span><small>远程网关</small></div><i></i><div class="step"><span>4</span><small>云之家登录</small></div></div></section>
+        </div>
+
+        <div id="page-services" class="page">
+          <div class="page-heading"><div><p class="eyebrow">目录与运行状态</p><h1>MCP 服务</h1><p class="subtitle">登记服务入口并维护工具清单。启用状态目前仅用于管理界面演示。</p></div><button class="button primary" data-action="add-service"><span>＋</span> 添加 MCP 服务</button></div>
+          <div class="toolbar"><div class="search-box"><span>⌕</span><input id="service-search" type="search" placeholder="搜索服务名称或类别"></div><div class="filter-pills"><button class="filter-pill active" data-service-filter="all">全部</button><button class="filter-pill" data-service-filter="active">已启用</button><button class="filter-pill" data-service-filter="draft">草稿</button></div></div>
+          <div id="service-grid" class="service-grid"></div>
+        </div>
+
+        <div id="page-permissions" class="page">
+          <div class="page-heading"><div><p class="eyebrow">访问控制</p><h1>权限策略</h1><p class="subtitle">按用户组、服务和工具设置允许、审批或拒绝策略。</p></div></div>
+          <div class="permission-banner"><span>⌑</span><div><strong>策略编辑原型</strong><p>本页保存管理器配置；尚未连接远程网关，因此当前不会拦截真实 MCP 调用。</p></div></div>
+          <div class="permission-layout"><section class="panel permission-controls"><label>选择用户组<select id="permission-group"></select></label><label>选择服务<select id="permission-service"></select></label><div class="legend"><span><i class="legend-dot allow"></i>允许</span><span><i class="legend-dot approval"></i>需审批</span><span><i class="legend-dot deny"></i>拒绝</span></div></section><section class="panel permission-table-panel"><div class="panel-heading"><div><h2 id="permission-title">工具权限</h2><p>默认拒绝；仅为明确授权的工具开放访问。</p></div></div><div id="permission-list"></div></section></div>
+        </div>
+
+        <div id="page-users" class="page">
+          <div class="page-heading"><div><p class="eyebrow">团队身份</p><h1>用户与用户组</h1><p class="subtitle">本阶段使用演示账号；后续由云之家同步员工身份和组织信息。</p></div><button class="button primary" data-action="add-user"><span>＋</span> 添加演示用户</button></div>
+          <div class="user-layout"><section class="panel"><div class="panel-heading"><div><h2>用户组</h2><p>按团队统一管理访问策略</p></div></div><div id="group-list" class="group-list"></div></section><section class="panel users-panel"><div class="panel-heading"><div><h2>用户</h2><p>当前演示环境中的用户身份</p></div><div class="search-box compact"><span>⌕</span><input id="user-search" type="search" placeholder="搜索用户"></div></div><div class="table-wrap"><table><thead><tr><th>用户</th><th>账号</th><th>用户组</th><th>身份来源</th></tr></thead><tbody id="users-table"></tbody></table></div></section></div>
+        </div>
+
+        <div id="page-audit" class="page">
+          <div class="page-heading"><div><p class="eyebrow">安全与追溯</p><h1>操作审计</h1><p class="subtitle">记录管理器内配置变更。MCP 调用审计将在网关阶段接入。</p></div><div class="audit-status"><span></span> 本地演示记录</div></div>
+          <section class="panel audit-panel"><div class="panel-heading"><div><h2>管理活动</h2><p>显示最近 200 条配置变更</p></div><div class="search-box compact"><span>⌕</span><input id="audit-search" type="search" placeholder="搜索操作、人员或对象"></div></div><div class="table-wrap"><table><thead><tr><th>时间</th><th>操作人</th><th>操作</th><th>对象</th><th>结果</th></tr></thead><tbody id="audit-table"></tbody></table></div></section>
+        </div>
+      </section>
+      <footer class="footer"><span>Company MCP Manager</span><span>开发预览 · 0.1.0</span></footer>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modal-backdrop" hidden><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-heading"><div><span class="eyebrow" id="modal-eyebrow">管理配置</span><h2 id="modal-title">添加 MCP 服务</h2></div><button class="icon-button modal-close" aria-label="关闭">×</button></div><form id="service-form"><label>服务名称<input name="name" required maxlength="80" placeholder="例如：SQL Server"></label><div class="form-row"><label>服务类别<select name="category"><option>数据库</option><option>业务系统</option><option>文件与存储</option><option>基础设施</option><option>开发工具</option><option>其他</option></select></label><label>传输方式<select name="transport"><option>Streamable HTTP</option><option>SSE</option></select></label></div><label>远程服务地址<input name="endpoint" required maxlength="500" placeholder="https://mcp.company.example/mcp"></label><label>说明<textarea name="description" rows="3" maxlength="300" placeholder="服务用途与适用范围"></textarea></label><div class="modal-note"><span>i</span>凭据配置将在后续安全凭据模块中完成。本地预览请勿填写密码或令牌。</div><div class="modal-actions"><button type="button" class="button secondary modal-cancel">取消</button><button type="submit" class="button primary">保存服务</button></div></form></section></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="/app.js" type="module"></script>
+</body>
+</html>
+
