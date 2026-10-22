@@ -21,7 +21,7 @@ function serviceMarkup(service, compact = false) {
   const status = service.status || 'draft';
   const tools = service.tools || [];
   if (compact) return `<div class="overview-service"><div class="service-symbol">${esc(icons[service.category] || '◇')}</div><div class="service-meta"><strong>${esc(service.name)}</strong><small>${esc(service.category)} · ${tools.length} 个工具${service.endpoint && service.endpoint !== '未登记' && service.endpoint !== '待配置公司服务器地址' ? ` · ${esc(service.endpoint)}` : ''}</small></div><div class="service-state"><i class="state-dot ${esc(status)}"></i>${esc(labels[status] || status)}</div></div>`;
-  return `<article class="service-card"><div class="service-card-top"><div class="service-symbol">${esc(icons[service.category] || '◇')}</div><div class="service-card-heading"><h3>${esc(service.name)}</h3><p>${esc(service.category)} · ${esc(service.transport || 'Streamable HTTP')}</p></div><span class="status-tag ${esc(status)}">${esc(labels[status] || status)}</span></div><p class="service-description">${esc(service.description || '尚未填写服务说明。')}</p><div class="service-details"><div class="detail-line"><span>服务地址</span><span title="${esc(service.endpoint)}">${esc(service.endpoint)}</span></div><div class="detail-line"><span>工具数量</span><span>${tools.length} 个${tools.length ? '已登记' : '待同步'}</span></div></div><div class="tools-chips">${tools.length ? tools.map(t => `<span class="tool-chip">${esc(t.label || t.name)}</span>`).join('') : '<span class="tool-chip">等待网关接入后同步</span>'}</div><div class="service-card-actions"><button class="small-button" data-edit-tools="${esc(service.id)}">工具清单</button>${status === 'active' ? `<button class="small-button" data-toggle-service="${esc(service.id)}" data-status="paused">暂停</button>` : `<button class="small-button primary-small" data-toggle-service="${esc(service.id)}" data-status="active">${status === 'paused' ? '重新启用' : '启用'}</button>`}</div></article>`;
+  return `<article class="service-card"><div class="service-card-top"><div class="service-symbol">${esc(icons[service.category] || '◇')}</div><div class="service-card-heading"><h3>${esc(service.name)}</h3><p>${esc(service.category)} · ${esc(service.transport || 'Streamable HTTP')}</p></div><span class="status-tag ${esc(status)}">${esc(labels[status] || status)}</span></div><p class="service-description">${esc(service.description || '尚未填写服务说明。')}</p><div class="service-details"><div class="detail-line"><span>服务地址</span><span title="${esc(service.endpoint)}">${esc(service.endpoint)}</span></div><div class="detail-line"><span>工具数量</span><span>${tools.length} 个${tools.length ? '已登记' : '待同步'}</span></div>${service.toolSyncAt ? `<div class="detail-line"><span>上次同步</span><span>${fmtTime(service.toolSyncAt)}</span></div>` : ''}</div><div class="tools-chips">${tools.length ? tools.map(t => `<span class="tool-chip">${esc(t.label || t.name)}</span>`).join('') : '<span class="tool-chip">连接服务以同步工具清单</span>'}</div><div class="service-card-actions"><button class="small-button primary-small" data-sync-tools="${esc(service.id)}">连接并同步</button><button class="small-button" data-edit-tools="${esc(service.id)}">工具清单</button>${status === 'active' ? `<button class="small-button" data-toggle-service="${esc(service.id)}" data-status="paused">暂停</button>` : `<button class="small-button" data-toggle-service="${esc(service.id)}" data-status="active">${status === 'paused' ? '重新启用' : '启用'}</button>`}</div></article>`;
 }
 function renderOverview() {
   const { services, groups, grants, audit } = state.data;
@@ -103,6 +103,14 @@ document.addEventListener('click', async event => {
     catch (e) { toast(e.message); }
   }
   const edit = event.target.closest('[data-edit-tools]'); if (edit) editTools(edit.dataset.editTools);
+  const sync = event.target.closest('[data-sync-tools]');
+  if (sync) {
+    const oldLabel = sync.textContent; sync.disabled = true; sync.textContent = '连接中…';
+    try {
+      const result = await request(`/api/services/${encodeURIComponent(sync.dataset.syncTools)}/discover`, { method: 'POST' });
+      await refresh(); toast(`已同步 ${result.tools.length} 个工具；请检查风险分类并配置权限`);
+    } catch (e) { sync.disabled = false; sync.textContent = oldLabel; toast(e.message); }
+  }
   const filter = event.target.closest('[data-service-filter]');
   if (filter) { state.serviceFilter = filter.dataset.serviceFilter; $$('.filter-pill').forEach(x => x.classList.toggle('active', x === filter)); renderServices(); }
 });
