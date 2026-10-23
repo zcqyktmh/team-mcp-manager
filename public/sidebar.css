@@ -1,0 +1,47 @@
+/* The navigation scrolls independently while the account stays in view. */
+body { --sidebar-width: 248px; }
+.sidebar { width: var(--sidebar-width); height: 100vh; height: 100dvh; overflow: hidden; padding: 20px 15px 14px; }
+.main { margin-left: var(--sidebar-width); min-width: 0; }
+.sidebar-header { display: flex; align-items: center; gap: 6px; flex-shrink: 0; padding-bottom: 20px; }
+.sidebar .brand { flex: 1; min-width: 0; padding: 0 4px; gap: 9px; }
+.sidebar .brand-mark { flex: 0 0 36px; }
+.sidebar .brand strong { font-size: 13px; white-space: nowrap; }
+.sidebar-toggle { flex: 0 0 28px; width: 28px; height: 28px; border: 1px solid #ffffff24; border-radius: 8px; background: #ffffff09; color: #bac5de; font-size: 23px; line-height: 1; cursor: pointer; }
+.sidebar-toggle:hover { color: white; background: #ffffff18; }
+.sidebar-toggle:focus-visible, .sidebar .nav:focus-visible { outline: 2px solid #9caaff; outline-offset: -2px; }
+.sidebar .workspace-label { flex-shrink: 0; }
+.sidebar .nav { display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #52617f transparent; padding: 2px 3px 8px; }
+.sidebar .nav::-webkit-scrollbar { width: 5px; }
+.sidebar .nav::-webkit-scrollbar-thumb { background: #52617f; border-radius: 8px; }
+.sidebar .nav-item { flex: 0 0 43px; min-height: 43px; width: 100%; white-space: nowrap; }
+.sidebar .nav-item[hidden], .sidebar #logout-link[hidden] { display: none; }
+.sidebar .nav-icon { flex: 0 0 18px; }
+.sidebar .nav-label { overflow: hidden; text-overflow: ellipsis; }
+.sidebar .sidebar-bottom { flex: 0 0 auto; margin-top: 10px; }
+.sidebar .phase-card { margin-bottom: 10px; }
+.sidebar .profile-info strong, .sidebar .profile-info small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.sidebar-collapsed { --sidebar-width: 76px; }
+.sidebar-collapsed .sidebar { padding: 18px 8px 12px; }
+.sidebar-collapsed .sidebar-header { flex-direction: column; padding-bottom: 14px; gap: 12px; }
+.sidebar-collapsed .sidebar .brand { padding: 0; flex: 0 0 auto; }
+.sidebar-collapsed .sidebar .brand > div:not(.brand-mark), .sidebar-collapsed .workspace-label, .sidebar-collapsed .nav-label, .sidebar-collapsed .nav-count, .sidebar-collapsed .phase-card, .sidebar-collapsed .profile-info, .sidebar-collapsed #profile-menu { display: none; }
+.sidebar-collapsed .sidebar .nav-item { justify-content: center; padding: 0; gap: 0; font-size: 0; }
+.sidebar-collapsed .sidebar .nav-icon { font-size: 19px; }
+.sidebar-collapsed .sidebar .profile { flex-direction: column; justify-content: center; gap: 9px; padding: 12px 0 0; }
+.sidebar-collapsed #logout-link { font-size: 10px; letter-spacing: 0; }
+@media (max-width: 1100px) { body:not(.sidebar-collapsed) { --sidebar-width: 215px; } }
+@media (max-width: 760px) {
+  body:not(.sidebar-collapsed) { --sidebar-width: 230px; }
+  body:not(.sidebar-collapsed) .sidebar .brand > div:not(.brand-mark), body:not(.sidebar-collapsed) .workspace-label, body:not(.sidebar-collapsed) .profile-info, body:not(.sidebar-collapsed) .profile-menu { display: block; }
+  body:not(.sidebar-collapsed) .sidebar .nav-item { justify-content: flex-start; padding: 0 10px; gap: 10px; font-size: 13px; }
+  body:not(.sidebar-collapsed) .sidebar .nav-count { display: inline-block; }
+  body:not(.sidebar-collapsed) .sidebar .profile { justify-content: flex-start; }
+  .sidebar .brand-mark { width: 36px; height: 36px; }
+}
+@media (max-height: 660px) {
+  .sidebar { padding-top: 12px; padding-bottom: 10px; }
+  .sidebar-header { padding-bottom: 12px; }
+  .sidebar .nav-item { flex-basis: 38px; min-height: 38px; }
+  .sidebar .phase-card { display: none; }
+  .sidebar .profile { padding-top: 10px; }
+}

@@ -1,69 +1,98 @@
-# Team MCP Manager
+# Team MCP Manager 1.0.0
 
-面向团队的 MCP 管理器开发原型，提供 MCP 服务目录、用户与用户组、工具级授权策略，以及管理配置审计界面。目标是让 AI 客户端连接统一网关，由网关集中认证、授权并转发到团队部署的 MCP 服务。
+公司内部使用的 MCP 管理台和员工工具访问网关，提供网页后台、员工自助工作台、云之家登录、发布审核、工具权限及个人凭据管理。
 
-## 当前包含
+**1.0.0 为首个功能发布版，不代表已经完成生产安全审计或真实企业系统联调。** 当前采用单进程本地文件存储，建议先在隔离环境试用。
 
-- MCP 服务登记、类别、远程地址和传输方式维护
-- 连接 Streamable HTTP MCP 服务并同步工具清单（优先支持 2026-07-28 协议，旧版服务回退到初始化握手）
-- 提供 MCP 管理工具端点，AI 可提交服务上架申请并查询状态
-- 指定平台管理员审核；通过后只登记为服务草稿，不自动执行安装或开放调用
-- 服务状态与工具清单展示
-- 用户组级工具授权策略：允许、需审批、拒绝
-- 演示用户管理和本地配置变更审计
-- 单机管理台 API 与响应式网页界面
+## 功能
 
-## 跨平台可执行文件
+- MCP 服务登记、配置弹窗、启停、工具同步和连接状态。
+- 员工工作台：公司市场、个人工具权限、使用申请、个人凭据和提交记录。
+- 公开 / 受限 MCP 和 Skill；管理员审核发布与员工使用申请。
+- 员工提交已部署的远程 MCP 地址、上传 Skill ZIP；指定管理员审核。
+- 用户组维护、用户组和个人工具授权、管理页面访问控制。
+- 云之家官方扫码 / 轻应用登录与账号预绑定；首位管理员扫码获取身份并人工确认。
+- 浏览器登录缓存最长 7 天；会话和个人凭据加密保存在服务端。
+- 员工服务专属 Bearer 令牌：有效期 30 天，只显示一次，支持撤销。
+- 网关 `/gateway/<服务ID>/mcp`：过滤工具清单、逐次鉴权、使用员工本人下游凭据。
+- 后台运行日志与配置审计；可收起侧栏、表格编辑和弹窗表单。
 
-程序不需要在目标电脑预装 Node.js。使用 Node.js 24 和 npm 在项目目录运行：
+## 下载与运行
+
+在 [Releases](https://github.com/zcqyktmh/team-mcp-manager/releases) 下载相应平台文件。打包版内置 Node.js，无需另行安装运行环境。
+
+| 平台 | 文件 |
+| --- | --- |
+| Windows x64 | `TeamMcpManager.exe` |
+| Linux x64 | `team-mcp-manager-linux-x64` |
+| Linux ARM64 | `team-mcp-manager-linux-arm64` |
+| macOS Intel | `team-mcp-manager-macos-x64` |
+| macOS Apple 芯片 | `team-mcp-manager-macos-arm64` |
+
+Windows 运行 EXE；Linux / macOS 先赋予执行权限 `chmod +x <文件>`，再运行。macOS 版本未配置 Developer ID 签名和公证，下载后需在 Mac 上执行 `codesign --force --sign - <文件>` 进行本机 ad-hoc 签名后再运行。未对所有平台进行运行验证。
+
+程序默认只监听 `127.0.0.1:4173`。打开 `http://127.0.0.1:4173`。首次启动为本机演示模式；企业使用前必须启用企业身份认证。公司服务器对外服务需要另行配置 HTTPS 反向代理与网络访问边界。
+
+## 开发与构建
+
+源码运行需要 Node.js 20+；构建建议 Node.js 24。
 
 ```sh
-npm install
-npm run build:all
-```
-
-`dist/` 中会生成以下平台版本：
-
-- Windows x64：`TeamMcpManager.exe`
-- macOS Intel：`team-mcp-manager-macos-x64`
-- macOS Apple 芯片：`team-mcp-manager-macos-arm64`
-- Linux x64：`team-mcp-manager-linux-x64`
-- Linux ARM64：`team-mcp-manager-linux-arm64`
-
-只构建单个平台时，可使用 `npm run build:win`、`npm run build:mac` 或 `npm run build:linux`。双击/运行相应程序后会启动本机管理器并尝试打开浏览器；如果没有自动打开，请访问 `http://127.0.0.1:4173`。运行数据按操作系统和当前用户分别保存：Windows 在 `%LOCALAPPDATA%\TeamMcpManager\data\manager.json`，macOS 在 `~/Library/Application Support/team-mcp-manager/data/manager.json`，Linux 在 `$XDG_DATA_HOME/team-mcp-manager/data/manager.json`（未设置 `XDG_DATA_HOME` 时使用 `~/.local/share`）。
-
-GitHub Actions 会在 Windows、macOS 和 Linux 构建机上分别构建并提供可下载的构建产物。当前 macOS 二进制没有签名，系统可能阻止启动；需在 Mac 上先进行 ad-hoc 签名，正式分发则应配置 Apple Developer ID 签名与公证。
-
-## 开发模式本机运行
-
-需要 Node.js 20 或更高版本。不需要安装第三方 npm 依赖。
-
-```sh
+npm ci
 npm start
 ```
 
-浏览器打开 `http://127.0.0.1:4173`。首次启动时会在 `data/manager.json` 创建演示数据。可通过环境变量 `MCP_MANAGER_PORT` 更改本地端口。
+```sh
+npm run build:win
+npm run build:linux
+npm run build:mac
+npm run build:all
+```
 
-AI 客户端可连接 `http://127.0.0.1:4173/mcp`（Streamable HTTP），使用 `submit_mcp_publication` 提交已部署 MCP 服务的名称、类别、地址、用途、申请人账号和指定审核人账号；`get_mcp_publication_status` 可查询申请状态。审核页面位于“发布审批”。审核通过后服务以草稿登记，仍需连接服务同步工具并由管理员启用。
+产物位于 `dist/`；GitHub Actions 也提供各平台构建产物。
 
-## 重要安全边界
+## 数据位置
 
-- 服务只绑定 `127.0.0.1`，用于本机开发预览。
-- 此版本没有登录或用户认证；演示身份不能用于真实员工访问。
-- 工具同步只读取服务元数据；管理器尚未代理工具调用，权限策略不能拦截真实调用。
-- “发布审批”目前完成申请、指定审核、通过后登记草稿的流程；不会在服务器安装第三方代码或执行部署命令。
-- MCP 提交人账号和审核人账号当前是本机预览中的自报/模拟身份，审核人选择不能替代登录认证。
-- 不要向演示界面输入密码、访问令牌或其他秘密信息。
-- 需要登录的下游 MCP 服务暂不可同步；员工身份传递、个人凭据保管、数据库写入/删除授权、审批和云之家登录尚未实现。
-- 本项目目前不能直接部署为团队生产服务，也不能用于保护真实数据。
+- 源码运行：项目的 `data/`。
+- Windows 打包版：`%LOCALAPPDATA%/TeamMcpManager/data/`。
+- macOS 打包版：`~/Library/Application Support/team-mcp-manager/data/`。
+- Linux 打包版：`$XDG_DATA_HOME/team-mcp-manager/data/`；未设置时为 `~/.local/share/team-mcp-manager/data/`。
+- `MCP_MANAGER_DATA_DIR` 可指定数据目录；`MCP_MANAGER_PORT` 可更改端口。
 
-## 后续开发方向
+`data/`、`.env`、截图和构建文件不会提交源码仓库。备份时需保护完整数据目录（包括签名密钥），限制服务账号和备份访问权限。
 
-1. 接入云之家登录，使用可信员工身份限制申请与审核。
-2. 完成受控部署执行器和专人审核后的服务器部署流程。
-3. 增加远程 MCP 网关、调用级权限校验与审批拦截。
-4. 使用安全凭据库保存目标服务的个人身份凭据，并接入 SQL Server MCP。
-5. 完成 HTTPS、访问边界、备份、监控与生产部署。
+## 配置企业登录
 
-欢迎通过 GitHub Issues 讨论功能或报告问题。发布版本和许可条款会在后续阶段补充。
+后台“集成登录”填写云之家应用资料、回调地址及管理员身份，先保存草稿，再扫码并确认首位管理员身份，最后启用并重启。员工手机号由企业管理员核验，并绑定企业成员稳定身份；不按姓名自动匹配。管理器不收集云之家密码。
 
+配置文件 `data/auth-settings.json` 含应用密钥，请勿上传仓库。其他平台（企业微信、钉钉、飞书、QQ、微信）暂为规划 / 配置草稿，不可作为已支持登录方式。
+
+## 员工连接 MCP
+
+1. 管理员登记远程服务，同步工具，启用并发布到市场。
+2. 管理员授予用户组或个人具体工具权限；没有授权默认拒绝，明确拒绝优先。
+3. 员工登录“我的 MCP”，配置本人下游服务凭据。
+4. 在“AI 工具连接”创建令牌，复制服务器地址和 Bearer 令牌到支持自定义授权头的 Streamable HTTP 客户端。
+5. 客户端连接 `https://公司管理器域名/gateway/<服务ID>/mcp`，设置 `Authorization: Bearer <个人令牌>`。
+
+令牌不增加工具权限。网关每次检查最新用户、服务和权限状态；浏览器 Cookie 不能代替客户端令牌。生产网络应限制下游 MCP 仅允许网关服务器访问，防止绕过鉴权。
+
+## 当前限制
+
+- 尚未实现客户端 OAuth 浏览器授权；启用企业登录后旧 `/mcp` 发布工具端点拒绝匿名访问。员工资源提交请使用工作台。
+- 服务器自助部署、容器执行器、外部市场导入、Skill 客户端自动同步尚未实现。MCP 审核通过后仅登记草稿。
+- 网关目前开放工具清单与调用，不支持资源、提示词、服务端采样或长连接推送。
+- 数据范围由下游 MCP 和数据源权限执行；尚无 SQL 语义检查、行级策略或删除逐次审批。通用 SQL 工具权限不能代替数据库账号权限。
+- 下游 `none` 认证不能保证员工身份。使用 Basic / Bearer 时每人分别绑定凭据，不共享管理员凭据。
+- Skill ZIP 检查仅为静态检查，不执行脚本，也不能替代恶意软件检测。
+- 本地 JSON 存储适用于试用，不支持多进程 / 多副本一致性；并发授权修改、容灾、生产审计和真实下游联调仍需完善。
+- 跨平台打包成功不等于已完成各平台安装、签名或运行验证。
+
+## 文档
+
+- [员工网关说明](docs/employee-gateway.md)
+- [统一登录与身份源规划](docs/identity-provider-plan.md)
+- [员工市场和部署规划](docs/employee-marketplace-plan.md)
+- [Skill 分发规划](docs/skill-distribution-plan.md)
+
+欢迎通过 Issues 反馈问题。仓库公开可见，目前未指定开源许可证；公开展示不自动授予额外的使用或分发许可。

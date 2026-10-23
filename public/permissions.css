@@ -1,0 +1,40 @@
+#page-permissions .permission-banner { background: #f0f3ff; border-color: #e0e6ff; color: #6272d6; }
+#page-permissions .permission-banner strong { color: #546295; }
+#page-permissions .permission-banner p { color: #8490ad; line-height: 1.7; }
+.permission-scope { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 15px; padding: 20px; }
+.permission-scope-intro { display: flex; align-items: center; gap: 12px; }
+.permission-scope-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: #eff1ff; color: #6273df; font-size: 22px; }
+.permission-scope-intro h2 { font-size: 13px; margin: 0 0 6px; color: #354056; }
+.permission-scope-intro p { margin: 0; font-size: 10px; color: #929bad; }
+#page-permissions .permission-controls { display: grid; grid-template-columns: repeat(2, minmax(150px, 1fr)); gap: 14px; min-width: 45%; }
+#page-permissions .permission-controls label { font-size: 10px; color: #8590a4; }
+#page-permissions .permission-controls select { padding: 10px 12px; min-height: 38px; border-radius: 8px; color: #465168; font-size: 11px; }
+.permission-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; margin-bottom: 18px; }
+.permission-summary-item { padding: 16px 18px; border: 1px solid #edf0f5; border-radius: 11px; background: white; display: flex; align-items: center; gap: 12px; }
+.permission-summary-item > span { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; font-size: 16px; }
+.permission-summary-item.allow > span { background: #eaf7f2; color: #268a6a; }
+.permission-summary-item.approval > span { background: #fff5e3; color: #b98937; }
+.permission-summary-item.deny > span { background: #f3f4f8; color: #8993a6; }
+.permission-summary-item strong { font-size: 22px; color: #354056; line-height: 1.2; }
+.permission-summary-item small { display: block; font-size: 10px; color: #929bad; margin-top: 5px; }
+.permission-section-label { padding: 5px 9px; border: 1px solid #e7eafa; border-radius: 6px; background: #f7f8ff; color: #7b86ad; font-size: 9px; white-space: nowrap; }
+.permission-column-head, #page-permissions .permission-row { display: grid; grid-template-columns: minmax(160px, 1fr) 110px 150px; gap: 20px; align-items: center; }
+.permission-column-head { background: #f8f9fc; color: #9aa4b6; font-size: 9px; padding: 11px 14px; border-radius: 7px; }
+#page-permissions .permission-row { padding: 15px 14px; border-top-color: #f0f2f7; }
+#page-permissions #permission-list .permission-row:first-child { border-top: 0; }
+#page-permissions .permission-tool strong { font-size: 11px; }
+#page-permissions .permission-tool small { margin-top: 6px; line-height: 1.6; font-size: 9px; }
+#page-permissions .permission-row select { padding: 9px 10px; border-radius: 8px; font-size: 10px; border-color: #e3e8f1; color: #67758e; background-color: #fafbfe; }
+#page-permissions select:focus-visible { outline: 2px solid #c6ceff; outline-offset: 2px; }
+#page-permissions .risk-tag { font-size: 9px; padding: 5px 8px; border-radius: 5px; }
+#page-permissions .page-permission-panel { margin-top: 18px; }
+#page-permission-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+#page-permissions .page-permission-row { grid-template-columns: minmax(120px, 1fr) auto; gap: 10px 15px; padding: 15px; border: 1px solid #edf0f5; border-radius: 9px; align-items: start; }
+#page-permissions .page-permission-row .permission-tool { grid-row: span 2; }
+#page-permissions .page-permission-row .risk-tag { justify-self: end; }
+#page-permissions .page-permission-row select { width: 118px; }
+#access-review-panel { margin-top: 0; margin-bottom: 18px; }
+#access-review-panel .table-wrap { border: 1px solid #edf0f5; border-radius: 8px; }
+#page-permissions .permission-empty { padding: 36px 20px; background: #fafbfe; border-radius: 9px; line-height: 1.8; }
+@media(max-width: 1000px) { .permission-scope { align-items: stretch; flex-direction: column; gap: 18px; } #page-permission-list { grid-template-columns: 1fr; } }
+@media(max-width: 600px) { .permission-summary { gap: 7px; } .permission-summary-item { padding: 12px 9px; gap: 8px; } .permission-summary-item > span { display: none; } .permission-summary-item strong { font-size: 19px; } #page-permissions .permission-controls { grid-template-columns: 1fr; } .permission-column-head { display: none; } #page-permissions #permission-list .permission-row { grid-template-columns: minmax(0, 1fr) 110px; gap: 10px; padding-inline: 0; } #permission-list .permission-tool { grid-column: 1 / -1; } }

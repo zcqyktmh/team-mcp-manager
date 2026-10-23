@@ -3,35 +3,57 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f5f7fb">
+  <meta name="theme-color" content="#faf9f7">
   <title>MCP 管理器</title>
+  <link rel="icon" type="image/svg+xml" href="/logo-neutral.svg?v=1">
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/skills.css">
+  <link rel="stylesheet" href="/sidebar.css">
+  <link rel="stylesheet" href="/permissions.css">
+  <link rel="stylesheet" href="/theme-archestra.css?v=1">
 </head>
 <body>
-  <div class="app-shell">
+  <div class="boot-screen" id="boot-screen">正在连接管理器…</div>
+  <section class="auth-gate" id="auth-gate" hidden>
+    <div class="auth-card"><div class="brand-mark" role="img" aria-label="Company MCP 标志">M</div><p class="eyebrow">COMPANY MCP</p><h1>登录公司 MCP 管理器</h1><p id="auth-gate-message">选择一个平台继续登录。</p><div class="auth-platforms" role="group" aria-label="选择登录平台"><button type="button" class="auth-platform-tile cloud-home" data-auth-provider="cloud-home" aria-label="使用云之家登录"><span class="platform-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M13.5 35.5h21.2a8.3 8.3 0 0 0 .6-16.6A12.1 12.1 0 0 0 12 17.2a9.2 9.2 0 0 0 1.5 18.3Z"/><path d="M18 27.3h.1m6-.1h.1m6-.1h.1"/></svg></span><span class="platform-name">云之家</span><span class="platform-state">扫码登录</span></button><button type="button" class="auth-platform-tile wecom" data-auth-provider="wecom" disabled aria-label="企业微信，规划中"><span class="platform-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M22 14c-8 0-14 5-14 11 0 3 1.7 5.8 4.5 7.7L11 38l6.7-3.3c1.3.3 2.8.5 4.3.5 8 0 14-4.5 14-10.2S30 14 22 14Z"/><path d="M29 20c7 0 12 4 12 9 0 2.4-1.3 4.5-3.6 6l1.2 3.8-5.2-2.4"/></svg></span><span class="platform-name">企业微信</span><span class="platform-state">规划中</span></button><button type="button" class="auth-platform-tile dingtalk" data-auth-provider="dingtalk" disabled aria-label="钉钉，规划中"><span class="platform-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="m10 14 25-5-4 14-14 4 12 3-4 12-7-12-8-7 12 1Z"/></svg></span><span class="platform-name">钉钉</span><span class="platform-state">规划中</span></button><button type="button" class="auth-platform-tile feishu" data-auth-provider="feishu" disabled aria-label="飞书，规划中"><span class="platform-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M9 12h13l8 8-7 7-8-7h-6Z"/><path d="M39 36H26l-8-8 7-7 8 7h6Z"/><path d="m29 20 7-7h5v5l-8 8Z"/></svg></span><span class="platform-name">飞书</span><span class="platform-state">规划中</span></button><button type="button" class="auth-platform-tile qq" data-auth-provider="qq" disabled aria-label="QQ，规划中"><span class="platform-icon qq-mark" aria-hidden="true">QQ</span><span class="platform-name">QQ</span><span class="platform-state">规划中</span></button><button type="button" class="auth-platform-tile wechat" data-auth-provider="wechat" disabled aria-label="微信，规划中"><span class="platform-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M23 12C13 12 6 18 6 25c0 4 2.4 7.4 6.3 9.5L11 40l8-4c1.3.2 2.6.3 4 .3 9.7 0 16-5.4 16-12.2S32.7 12 23 12Z"/><path class="icon-cutout" d="M16 23h.1m13 0h.1"/></svg></span><span class="platform-name">微信</span><span class="platform-state">规划中</span></button></div><p class="identity-platform-note">目前开放云之家登录，其他平台后续接入。</p><small>登录凭据由所选平台验证；管理器不会保存通讯工具密码。</small></div>
+  </section>
+  <div class="app-shell" id="app-shell" hidden>
     <aside class="sidebar">
-      <div class="brand"><div class="brand-mark">M</div><div><strong>Company MCP</strong><span>管理控制台</span></div></div>
+      <div class="sidebar-header"><div class="brand"><div class="brand-mark" role="img" aria-label="Company MCP 标志">M</div><div><strong>Company MCP</strong><span>管理控制台</span></div></div><button type="button" id="sidebar-toggle" class="sidebar-toggle" aria-label="收起侧栏" aria-expanded="true" aria-controls="sidebar-navigation" title="收起侧栏">‹</button></div>
       <div class="workspace-label">工作空间</div>
-      <nav class="nav" aria-label="主导航">
+      <nav class="nav" id="sidebar-navigation" aria-label="主导航" tabindex="0">
+        <button class="nav-item" data-page="my-access"><span class="nav-icon">♙</span>我的 MCP</button>
         <button class="nav-item active" data-page="overview"><span class="nav-icon">▦</span>总览</button>
         <button class="nav-item" data-page="services"><span class="nav-icon">◈</span>MCP 服务<span class="nav-count" id="nav-service-count">0</span></button>
         <button class="nav-item" data-page="publications"><span class="nav-icon">⇧</span>发布审批<span class="nav-count" id="nav-submission-count">0</span></button>
+        <button class="nav-item" data-page="skills"><span class="nav-icon">✦</span>Skill 管理<span class="nav-count" id="nav-skill-count">0</span></button>
         <button class="nav-item" data-page="permissions"><span class="nav-icon">⌑</span>权限策略</button>
         <button class="nav-item" data-page="users"><span class="nav-icon">♙</span>用户与用户组</button>
         <button class="nav-item" data-page="audit"><span class="nav-icon">◷</span>操作审计</button>
+        <button class="nav-item" data-page="logs"><span class="nav-icon">▤</span>后台日志</button>
+        <button class="nav-item" data-page="login-settings"><span class="nav-icon">⚙</span>集成登录</button>
       </nav>
       <div class="sidebar-bottom">
         <div class="phase-card"><span class="phase-dot"></span><div><strong>本机开发预览</strong><small>管理器第一阶段</small></div></div>
-        <div class="profile"><div class="avatar">管</div><div class="profile-info"><strong>本地管理员</strong><small>演示环境</small></div><span class="profile-menu">•••</span></div>
+        <div class="profile"><div class="avatar" id="profile-avatar">管</div><div class="profile-info"><strong id="profile-name">本地管理员</strong><small id="profile-account">演示环境</small></div><a class="profile-menu" id="logout-link" href="/auth/logout" hidden>退出</a><span class="profile-menu" id="profile-menu">•••</span></div>
       </div>
     </aside>
 
     <main class="main">
-      <header class="topbar"><div class="breadcrumbs"><span>公司 MCP</span><i>/</i><strong id="crumb-current">总览</strong></div><div class="top-actions"><span class="environment-pill"><b></b>本机预览</span><button class="icon-button" title="通知" aria-label="通知">♧</button><div class="top-avatar">管</div></div></header>
+      <header class="topbar"><div class="breadcrumbs"><span>公司 MCP</span><i>/</i><strong id="crumb-current">总览</strong></div><div class="top-actions"><span class="environment-pill"><b></b><span id="environment-label">本机预览</span></span><button class="icon-button" title="通知" aria-label="通知">♧</button><div class="top-avatar" id="top-avatar">管</div></div></header>
       <section class="content">
+        <div id="page-my-access" class="page">
+          <div class="page-heading"><div><p class="eyebrow">员工自助工作台</p><h1>我的 MCP</h1><p class="subtitle">查看公司发布的 MCP、个人可用工具和权限状态；需要访问时可以直接申请。</p></div><button class="button secondary" id="refresh-my-access">刷新</button></div>
+          <div class="permission-banner"><span>⌘</span><div><strong>公司 MCP 市场</strong><p>全员发布的服务对所有员工开放；受限服务经管理员批准后显示。下载内容是服务器托管 MCP 的连接说明，不包含账号密钥；远程调用网关仍在后续阶段。</p></div></div>
+          <div id="my-access-summary" class="my-access-summary"></div>
+          <section class="panel"><div class="panel-heading"><div><h2>AI 工具连接</h2><p>个人令牌有效期 30 天，按服务签发；调用权限随管理员策略实时变化。</p></div><button class="button primary" id="gateway-create">创建连接令牌</button></div><div id="gateway-token-result"></div><div class="table-wrap"><table><thead><tr><th>名称</th><th>有效期</th><th>状态</th><th>操作</th></tr></thead><tbody id="gateway-tokens"></tbody></table></div></section><section class="panel personal-submissions-panel"><div class="panel-heading"><div><h2>我的资源提交</h2><p>提交 MCP 或 Skill，由指定管理员审核后发布。</p></div><div class="submission-actions"><button class="button secondary" data-employee-mcp>提交 MCP</button><button class="button primary" data-employee-skill>上传 Skill</button></div></div><div class="table-wrap"><table><thead><tr><th>资源 / 版本</th><th>类型</th><th>审核人</th><th>状态 / 意见</th><th>提交时间</th></tr></thead><tbody id="my-resource-submissions"></tbody></table></div></section>
+          <section class="market-section"><div class="panel-heading"><div><h2>已发布 MCP</h2><p>按公司市场发布和你的访问权限显示</p></div></div><div id="my-access-services" class="market-grid"></div></section>
+          <section class="market-section"><div class="panel-heading"><div><h2>公司 Skill 市场</h2><p>按版本授权，受限版本需申请后下载</p></div></div><div id="my-access-skills" class="market-grid"></div></section>
+          <section class="panel audit-panel"><div class="panel-heading"><div><h2>我的权限申请</h2><p>统一查看 MCP 与 Skill 申请状态和审核意见</p></div></div><div class="table-wrap"><table><thead><tr><th>资源 / 版本或工具</th><th>申请原因</th><th>状态</th><th>审核意见</th><th>时间</th></tr></thead><tbody id="my-access-requests"></tbody></table></div></section>
+        </div>
         <div id="page-overview" class="page active">
           <div class="page-heading"><div><p class="eyebrow">工作空间概况</p><h1>管理器总览</h1><p class="subtitle">集中查看 MCP 服务、访问策略和近期管理活动。</p></div><button class="button primary" data-action="add-service"><span>＋</span> 添加 MCP 服务</button></div>
-          <div class="notice"><span class="notice-icon">i</span><div><strong>当前为本机开发预览</strong><p>账号、服务和授权数据保存在本机演示文件中。云之家登录、远程网关和真实权限拦截将在后续阶段接入。</p></div><button class="notice-close" aria-label="关闭提示">×</button></div>
+          <div class="notice"><span class="notice-icon">i</span><div><strong>当前为本机开发预览</strong><p>员工手机号预绑定、云之家登录适配、页面权限和后台日志已接入代码；填写企业云之家应用参数后可联调。MCP 客户端 OAuth 网关仍在后续阶段。</p></div><button class="notice-close" aria-label="关闭提示">×</button></div>
           <div class="stats-grid">
             <article class="stat-card"><div class="stat-top"><span>已登记服务</span><span class="stat-icon purple">◈</span></div><div class="stat-value" id="stat-services">—</div><div class="stat-foot"><span class="muted">包含草稿和计划接入</span></div></article>
             <article class="stat-card"><div class="stat-top"><span>可用工具</span><span class="stat-icon blue">⌘</span></div><div class="stat-value" id="stat-tools">—</div><div class="stat-foot"><span class="muted">已登记工具定义</span></div></article>
@@ -42,7 +64,7 @@
             <section class="panel service-panel"><div class="panel-heading"><div><h2>服务目录</h2><p>管理公司统一提供的 MCP 服务</p></div><button class="text-button" data-nav="services">查看全部 <span>→</span></button></div><div id="overview-services" class="overview-service-list"></div></section>
             <section class="panel activity-panel"><div class="panel-heading"><div><h2>最近活动</h2><p>管理配置的本地演示记录</p></div><button class="text-button" data-nav="audit">查看审计 <span>→</span></button></div><div id="overview-audit" class="activity-list"></div></section>
           </div>
-          <section class="panel next-panel"><div class="next-icon">✦</div><div class="next-copy"><span class="eyebrow">实施进度</span><h2>从服务登记开始，逐步接入身份与网关</h2><p>下一步将接入云之家用户身份和远程 MCP 网关，再把 SQL Server 作为首个真实服务上线。</p></div><div class="step-track"><div class="step done"><span>1</span><small>管理界面</small></div><i></i><div class="step current"><span>2</span><small>权限后端</small></div><i></i><div class="step"><span>3</span><small>远程网关</small></div><i></i><div class="step"><span>4</span><small>云之家登录</small></div></div></section>
+          <section class="panel next-panel"><div class="next-icon">✦</div><div class="next-copy"><span class="eyebrow">实施进度</span><h2>先联调云之家，再接通远程 MCP 网关</h2><p>登录配置入口已就绪；完成企业应用参数与身份字段映射后，继续实现 Codex、WorkBuddy 等客户端的 OAuth 授权。企业微信、钉钉、飞书、QQ 和微信身份源列入后续规划。</p></div><div class="step-track"><div class="step done"><span>1</span><small>管理界面</small></div><i></i><div class="step done"><span>2</span><small>权限与日志</small></div><i></i><div class="step current"><span>3</span><small>云之家联调</small></div><i></i><div class="step"><span>4</span><small>MCP 客户端网关</small></div></div></section>
         </div>
 
         <div id="page-services" class="page">
@@ -53,34 +75,71 @@
 
         <div id="page-publications" class="page">
           <div class="page-heading"><div><p class="eyebrow">AI 工具接入与人工把关</p><h1>发布审批</h1><p class="subtitle">AI 工具可提交已部署 MCP 服务的上架申请；指定平台管理员审核后，才会登记进服务目录。</p></div></div>
-          <div class="permission-banner"><span>⇧</span><div><strong>AI 工具连接地址</strong><p>本机开发预览地址：<code id="manager-mcp-endpoint"></code>。工具只创建待审核申请，不会直接发布或执行安装命令。</p></div><button class="small-button" data-copy-mcp>复制地址</button></div>
-          <div class="permission-banner"><span>i</span><div><strong>当前为本机审核流程原型</strong><p>审核通过后服务先以草稿加入目录，管理员仍需同步工具并确认后启用。审核账号目前按指定的演示管理员账号校验；部署到公司服务器前，必须接入云之家登录，确保不能冒用审核人身份。</p></div></div>
+          <div class="permission-banner"><span>⇧</span><div><strong>AI 工具连接地址</strong><p>本机开发预览地址：<code id="manager-mcp-endpoint"></code>。当前 MCP 提交入口只创建待审核申请；启用云之家登录后，MCP 客户端 OAuth 授权网关尚未开放。</p></div><button class="small-button" data-copy-mcp>复制地址</button></div>
+          <div class="permission-banner"><span>i</span><div><strong>审核流程开发预览</strong><p>云之家未配置时审核账号仍为本地演示账号；启用云之家登录后，审核人身份改为当前登录员工。审核通过后服务先进入草稿，管理员需同步工具并确认后启用。</p></div></div>
           <section class="panel audit-panel"><div class="panel-heading"><div><h2>待我审核与申请记录</h2><p>只有申请时指定的平台管理员可以处理该申请。</p></div><label class="reviewer-picker">当前演示审核账号<select id="reviewer-account"></select></label></div><div class="table-wrap"><table><thead><tr><th>服务与地址</th><th>申请人</th><th>指定审核人</th><th>提交时间</th><th>状态 / 意见</th><th>操作</th></tr></thead><tbody id="submissions-table"></tbody></table></div></section>
         </div>
 
+        <div id="page-skills" class="page">
+          <div class="page-heading"><div><p class="eyebrow">内部流程与知识包</p><h1>Skill 管理</h1><p class="subtitle">上传 Skill ZIP，检查清单和风险提示，由指定管理员审核后按版本发布。</p></div></div>
+          <div class="permission-banner"><span>i</span><div><strong>Skill 上传与审核边界</strong><p>上传包只做静态检查并保留原始 ZIP，不会运行其中的脚本。未配置云之家时使用本地演示账号；配置后申请人和审核人使用真实登录身份。</p></div></div>
+          <section class="panel skill-upload-panel"><div class="panel-heading"><div><h2>提交 Skill 版本</h2><p>ZIP 中的根目录或唯一顶层目录需包含 SKILL.md</p></div></div>
+            <form id="skill-upload-form" class="skill-upload-form">
+              <div class="form-row"><label>显示名称<input name="name" required maxlength="80" placeholder="例如：销售分析助手"></label><label>Skill 标识<input name="skillSlug" required maxlength="64" pattern="[a-z0-9][a-z0-9-]{0,63}" placeholder="例如：sales-analysis"></label><label>版本<input name="version" required maxlength="40" pattern="[0-9]+[.][0-9]+[.][0-9]+(-[0-9A-Za-z.-]+)?" value="1.0.0"></label></div>
+              <label>版本说明<textarea name="description" required maxlength="1000" rows="2" placeholder="说明用途、变更内容和适用范围"></textarea></label>
+              <div class="form-row"><label>申请人<select name="requesterAccount" id="skill-requester-account" required></select></label><label>指定审核人<select name="reviewerAccount" id="skill-reviewer-account" required></select></label></div>
+              <fieldset class="skill-groups"><legend>允许使用的用户组</legend><div id="skill-target-groups" class="skill-group-options"></div></fieldset>
+              <label>Skill ZIP（最大 8 MB）<input name="archive" type="file" required accept=".zip,application/zip"></label>
+              <div class="modal-note"><span>i</span>支持 SKILL.md、文档、模板和常见图片；压缩包会检查路径、大小、文件类型和疑似密钥。脚本会标记给审核人检查，不会被管理器执行。</div>
+              <div class="skill-form-actions"><button class="button primary" type="submit">提交审核</button></div>
+            </form>
+          </section>
+          <section class="panel audit-panel skill-review-panel"><div class="panel-heading"><div><h2>Skill 审核队列</h2><p>审核人可下载原始包，查看文件清单、SKILL.md 和扫描提示。</p></div><label class="reviewer-picker">当前演示审核账号<select id="skill-reviewer-picker"></select></label></div><div class="table-wrap"><table><thead><tr><th>Skill / 版本</th><th>申请人 / 审核人</th><th>文件检查</th><th>状态 / 意见</th><th>操作</th></tr></thead><tbody id="skill-review-table"></tbody></table></div></section>
+          <section class="panel audit-panel"><div class="panel-heading"><div><h2>已发布 Skill 目录</h2><p>仅显示审核通过的版本；下载不会自动安装到 AI 工具。</p></div></div><div id="skill-catalog" class="skill-catalog"></div></section>
+        </div>
+
         <div id="page-permissions" class="page">
-          <div class="page-heading"><div><p class="eyebrow">访问控制</p><h1>权限策略</h1><p class="subtitle">按用户组、服务和工具设置允许、审批或拒绝策略。</p></div></div>
-          <div class="permission-banner"><span>⌑</span><div><strong>策略编辑原型</strong><p>本页保存管理器配置；尚未连接远程网关，因此当前不会拦截真实 MCP 调用。</p></div></div>
-          <div class="permission-layout"><section class="panel permission-controls"><label>选择用户组<select id="permission-group"></select></label><label>选择服务<select id="permission-service"></select></label><div class="legend"><span><i class="legend-dot allow"></i>允许</span><span><i class="legend-dot approval"></i>需审批</span><span><i class="legend-dot deny"></i>拒绝</span></div></section><section class="panel permission-table-panel"><div class="panel-heading"><div><h2 id="permission-title">工具权限</h2><p>默认拒绝；仅为明确授权的工具开放访问。</p></div></div><div id="permission-list"></div></section></div>
+          <div class="page-heading"><div><p class="eyebrow">访问控制</p><h1>权限策略</h1><p class="subtitle">按用户组分别设置页面访问权限与 MCP 工具操作权限。</p></div></div>
+          <section class="panel audit-panel access-review-panel" id="access-review-panel"><div class="panel-heading"><div><h2>员工权限申请</h2><p>统一审核 MCP 查看、工具授权和 Skill 版本使用申请。</p></div><button class="small-button" id="refresh-access-requests">刷新申请</button></div><div class="table-wrap"><table><thead><tr><th>员工</th><th>MCP / 工具</th><th>申请原因</th><th>提交时间</th><th>操作</th></tr></thead><tbody id="access-review-table"></tbody></table></div></section>
+          <div class="permission-banner"><span>⌑</span><div><strong>按用户组执行权限控制</strong><p>管理 API 会在云之家登录启用后按员工所属用户组校验页面和管理权限；MCP 工具调用级别的强制拦截需待 OAuth 网关接入后生效。</p></div></div>
+          <section class="panel permission-scope"><div class="permission-scope-intro"><span class="permission-scope-icon">⌑</span><div><h2>配置授权范围</h2><p>选择团队与服务，查看和调整访问策略</p></div></div><div class="permission-controls"><label>用户组<select id="permission-group"></select></label><label>MCP 服务<select id="permission-service"></select></label></div></section>
+          <div id="permission-summary" class="permission-summary"></div>
+          <section class="panel permission-table-panel"><div class="panel-heading"><div><h2 id="permission-title">工具权限</h2><p>设置每项工具的访问方式，修改后自动保存。</p></div><span class="permission-section-label">工具授权</span></div><div class="permission-column-head"><span>工具与用途</span><span>操作风险</span><span>访问方式</span></div><div id="permission-list"></div></section>
+          <section class="panel page-permission-panel"><div class="panel-heading"><div><h2 id="page-permission-title">页面访问权限</h2><p>控制该用户组是否可以查看管理器中的各个页面；默认拒绝。</p></div><span class="risk-tag">9 个管理页面</span></div><div id="page-permission-list"></div></section>
         </div>
 
         <div id="page-users" class="page">
-          <div class="page-heading"><div><p class="eyebrow">团队身份</p><h1>用户与用户组</h1><p class="subtitle">本阶段使用演示账号；后续由云之家同步员工身份和组织信息。</p></div><button class="button primary" data-action="add-user"><span>＋</span> 添加演示用户</button></div>
-          <div class="user-layout"><section class="panel"><div class="panel-heading"><div><h2>用户组</h2><p>按团队统一管理访问策略</p></div></div><div id="group-list" class="group-list"></div></section><section class="panel users-panel"><div class="panel-heading"><div><h2>用户</h2><p>当前演示环境中的用户身份</p></div><div class="search-box compact"><span>⌕</span><input id="user-search" type="search" placeholder="搜索用户"></div></div><div class="table-wrap"><table><thead><tr><th>用户</th><th>账号</th><th>用户组</th><th>身份来源</th></tr></thead><tbody id="users-table"></tbody></table></div></section></div>
+          <div class="page-heading"><div><p class="eyebrow">团队身份</p><h1>用户与用户组</h1><p class="subtitle">维护管理器账号、员工手机号、云之家身份绑定和用户组。</p></div><button class="button primary" data-action="add-user"><span>＋</span> 添加员工账号</button></div>
+          <div class="permission-banner"><span>♙</span><div><strong>员工账号与手机号预绑定</strong><p>管理员先核验并登记手机号和用户组，再绑定云之家企业 eid 与成员 openid。标准轻应用登录不会按姓名、设备编号或手机号猜测关联账号。管理器不保存员工密码，密码与验证策略由云之家负责。</p></div></div>
+          <div class="user-layout"><section class="panel"><div class="panel-heading"><div><h2>用户组</h2><p>按团队统一管理访问策略</p></div></div><div id="group-list" class="group-list"></div></section><section class="panel users-panel"><div class="panel-heading"><div><h2>用户</h2><p>员工账号与云之家手机号绑定关系</p></div><div class="search-box compact"><span>⌕</span><input id="user-search" type="search" placeholder="搜索用户"></div></div><div class="table-wrap"><table><thead><tr><th>用户</th><th>管理器账号</th><th>手机号</th><th>用户组</th><th>身份来源</th><th>管理</th></tr></thead><tbody id="users-table"></tbody></table></div></section></div>
+        </div>
+
+        <div id="page-login-settings" class="page">
+          <div class="page-heading"><div><p class="eyebrow">企业身份接入</p><h1>集成登录</h1><p class="subtitle">按平台分别保存应用配置，多个登录平台可并存。</p></div><a class="button secondary" href="/?preview=login" target="_blank" rel="noopener">预览登录页</a></div>
+          <section class="panel input-card"><div class="panel-heading"><div><h2>选择登录平台</h2><p>选择要管理的平台，分别保存配置；切换平台不会覆盖其他平台的设置。</p></div></div><label class="identity-platform">通讯工具<select id="settings-login-provider"><option value="cloud-home">云之家</option><option value="wecom">企业微信（规划中）</option><option value="dingtalk">钉钉（规划中）</option><option value="feishu">飞书（规划中）</option><option value="qq">QQ（规划中）</option><option value="wechat">微信（规划中）</option></select></label><p class="identity-platform-note">各平台配置独立保存，可同时维护多个平台。云之家可启用；其他平台可先保存接入资料草稿，登录适配仍在规划中。</p></section>
+          <section class="panel input-card" id="qr-login-preparation" hidden><div class="panel-heading"><div><h2>配置前准备 · 网站扫码登录</h2><p>登录管理器 → 云之家官方二维码 → 手机扫码确认 → 返回管理器。</p></div><a class="text-button" href="https://www.yunzhijia.com/opendocs/docs.html#/tutorial/index/qrcode-login" target="_blank" rel="noopener">官方扫码接入文档 ↗</a></div><details class="login-preparation-details"><summary>查看扫码应用配置步骤</summary><ol class="login-guide"><li>在云之家创建专门用于扫码登录的应用，取得它的 AppID 和 AppSecret；不要直接混用原工作台轻应用。</li><li>云之家扫码应用的「移动端访问地址」填写官方固定地址：<code>https://www.yunzhijia.com/opencloud/openthird/qrlogin</code>。</li><li>在下方填写扫码应用的 AppID、AppSecret、企业 eid。管理器的「扫码完成后的回调地址」填写公司 HTTPS 管理器域名加 <code>/auth/cloud-home/entry</code>，它和上一步的地址不同。</li><li>填写管理员账号、姓名和已核验手机号，先保存未启用的草稿。在服务器本机点击「准备扫码」，扫码后查看身份并确认绑定，系统自动保存 openid。随后启用登录、保存并重启。</li><li>员工直接打开管理器，点击「云之家扫码登录」，用云之家 App 扫码。扫码账号所在企业必须开通该扫码应用；回调后确认身份并进入对应员工账号。</li></ol><div class="modal-note">二维码由云之家官方页面生成，不是演示二维码。管理器校验浏览器 state、一次性 ticket、应用和企业归属。账号密码登录只在企业提供正式网站 SSO 协议后对接，当前不在管理器收集云之家密码。</div></details></section>
+          <section class="panel input-card" id="cloud-login-preparation"><div class="panel-heading"><div><h2>配置前准备 · 云之家轻应用</h2><p>标准流程：工作台打开应用 → 校验一次性 ticket → 核对企业成员 → 确认登录。</p></div><a class="text-button" href="https://www.yunzhijia.com/opendocs/docs.html#/tutorial/index" target="_blank" rel="noopener">官方轻应用指南 ↗</a></div><details class="login-preparation-details"><summary>查看配置步骤与员工绑定说明</summary><ol class="login-guide"><li>公司管理员登录云之家 Web 端，在「管理中心 → 轻应用管理」新建企业轻应用，取得 AppID 和 AppSecret，先限制为测试人员可见。</li><li>在下方选择「轻应用 ticket 免登」，填写企业团队 eid。令牌与身份接口已按官方文档内置，通常无需修改。</li><li>填写公司服务器 HTTPS 地址加 /auth/cloud-home/entry，并把相同地址登记为轻应用的移动端、Web 端或桌面端访问地址。</li><li>核验首位管理员在该企业的 openid，登记其管理器账号、姓名和手机号。普通员工需先在「用户与用户组」登记手机号，再点击「绑定云之家」录入企业 eid 和成员 openid。</li><li>保存后可检查应用凭据。确认信息完整再勾选启用，保存并重启管理器；从云之家工作台打开应用，用真实测试员工完成登录确认。</li></ol><div class="modal-note">ticket 不可重复使用；系统仅信任服务端换取的企业身份，不把前端 getPersonInfo、姓名或 deviceId 当成身份或手机号。身份接口不保证返回手机号，手机号由企业管理员核验后登记。普通浏览器直达不是扫码登录，需要从云之家工作台进入。</div><p class="login-help"><a href="https://www.yunzhijia.com/opendocs/docs.html#/server-api/auth/oauth" target="_blank" rel="noopener">官方应用令牌接口</a> · <a href="https://www.yunzhijia.com/opendocs/docs.html#/server-api/auth/index" target="_blank" rel="noopener">官方 ticket 身份接口</a></p></details></section>
+          <section class="panel input-card" id="future-login-preparation" hidden><div class="panel-heading"><div><h2>配置前准备</h2><p>请由企业管理员准备对应平台的企业应用标识、密钥和回调地址。可先保存通用接入资料草稿；各平台专有字段及登录适配将在后续补齐，当前不能启用。</p></div></div></section>
+          <section class="panel input-card"><div class="panel-heading"><div><h2 id="login-settings-title">云之家应用配置</h2><p id="login-settings-status" role="status">正在读取配置…</p></div></div><form id="login-settings-form" class="card-form"><div id="login-settings-fields" class="login-config-sections"></div><label class="login-enable"><input type="checkbox" name="enabled"><span id="login-enable-label">下次启动时启用云之家登录</span></label><p class="login-help">密钥只保存在服务端，留空保留已有值。密码和登录验证由云之家负责；轻应用登录不会为 MCP 客户端自动授权。普通员工须先核验手机号并预绑定企业成员身份。</p><div id="login-settings-result" class="login-help" role="status"></div><div class="card-actions"><button type="button" class="button secondary" id="check-cloud-home-credentials">检查已保存的应用凭据</button><button type="submit" class="button primary" id="save-login-settings">保存配置</button></div></form></section>
+          <section class="panel"><div class="panel-heading"><div><h2>后续身份源规划</h2><p>企业微信、钉钉、飞书、QQ 和微信将按企业身份映射方式逐步接入，目前支持独立保存通用接入资料草稿，实际登录尚未开放。</p></div></div></section>
+        </div>
+
+        <div id="page-logs" class="page">
+          <div class="page-heading"><div><p class="eyebrow">服务运行状态</p><h1>后台日志</h1><p class="subtitle">查看服务启动、接口访问、登录与请求异常；日志不记录密码、令牌、请求正文或 URL 查询参数。</p></div><button class="button secondary" id="refresh-logs"><span>↻</span>刷新日志</button></div>
+          <section class="panel audit-panel"><div class="panel-heading"><div><h2>后台运行记录</h2><p id="backend-log-count">最多保留最近 2,000 条内存记录，并追加保存到本机文件</p></div><div class="log-filters"><select id="log-level"><option value="all">全部级别</option><option value="error">错误</option><option value="warn">警告</option><option value="info">信息</option></select><div class="search-box compact"><span>⌕</span><input id="log-search" type="search" placeholder="搜索日志"></div></div></div><div class="table-wrap"><table><thead><tr><th>时间</th><th>级别</th><th>事件</th><th>请求路径</th><th>状态</th><th>耗时</th><th>账号</th></tr></thead><tbody id="backend-logs-table"></tbody></table></div></section>
         </div>
 
         <div id="page-audit" class="page">
           <div class="page-heading"><div><p class="eyebrow">安全与追溯</p><h1>操作审计</h1><p class="subtitle">记录管理器内配置变更。MCP 调用审计将在网关阶段接入。</p></div><div class="audit-status"><span></span> 本地演示记录</div></div>
           <section class="panel audit-panel"><div class="panel-heading"><div><h2>管理活动</h2><p>显示最近 200 条配置变更</p></div><div class="search-box compact"><span>⌕</span><input id="audit-search" type="search" placeholder="搜索操作、人员或对象"></div></div><div class="table-wrap"><table><thead><tr><th>时间</th><th>操作人</th><th>操作</th><th>对象</th><th>结果</th></tr></thead><tbody id="audit-table"></tbody></table></div></section>
         </div>
+        <div class="no-page-access" id="no-page-access" hidden>当前账号尚未获准访问管理页面，请联系平台管理员配置用户组页面权限。</div>
       </section>
-      <footer class="footer"><span>Company MCP Manager</span><span>开发预览 · 0.1.0</span></footer>
+      <footer class="footer"><span>Company MCP Manager</span><span>开发预览 · 1.0.0</span></footer>
     </main>
   </div>
-
-  <div class="modal-backdrop" id="modal-backdrop" hidden><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-heading"><div><span class="eyebrow" id="modal-eyebrow">管理配置</span><h2 id="modal-title">添加 MCP 服务</h2></div><button class="icon-button modal-close" aria-label="关闭">×</button></div><form id="service-form"><label>服务名称<input name="name" required maxlength="80" placeholder="例如：SQL Server"></label><div class="form-row"><label>服务类别<select name="category"><option>数据库</option><option>业务系统</option><option>文件与存储</option><option>基础设施</option><option>开发工具</option><option>其他</option></select></label><label>传输方式<select name="transport"><option>Streamable HTTP</option></select></label></div><label>远程服务地址<input name="endpoint" required maxlength="500" placeholder="https://mcp.company.example/mcp"></label><label>说明<textarea name="description" rows="3" maxlength="300" placeholder="服务用途与适用范围"></textarea></label><div class="modal-note"><span>i</span>当前支持 Streamable HTTP 服务连接与工具同步。要求登录的服务需等员工身份与凭据模块接入；不要把账号密码写进服务地址。</div><div class="modal-actions"><button type="button" class="button secondary modal-cancel">取消</button><button type="submit" class="button primary">保存服务</button></div></form></section></div>
+  <div class="modal-backdrop" id="modal-backdrop" hidden><section class="modal" role="region" aria-labelledby="modal-title"><div class="modal-heading"><div><span class="eyebrow" id="modal-eyebrow">管理配置</span><h2 id="modal-title">添加 MCP 服务</h2></div><button class="icon-button modal-close" aria-label="关闭">×</button></div><form id="service-form"><label>服务名称<input name="name" required maxlength="80" placeholder="例如：SQL Server"></label><div class="form-row"><label>服务类别<select name="category"><option>数据库</option><option>业务系统</option><option>文件与存储</option><option>基础设施</option><option>开发工具</option><option>其他</option></select></label><label>传输方式<select name="transport"><option>Streamable HTTP</option></select></label></div><label>远程服务地址<input name="endpoint" required maxlength="500" placeholder="https://mcp.company.example/mcp"></label><label>说明<textarea name="description" rows="3" maxlength="300" placeholder="服务用途与适用范围"></textarea></label><div class="modal-note"><span>i</span>当前支持 Streamable HTTP 服务连接与工具同步。要求登录的服务需等员工身份与凭据模块接入；不要把账号密码写进服务地址。</div><div class="modal-actions"><button type="button" class="button secondary modal-cancel">取消</button><button type="submit" class="button primary">保存服务</button></div></form></section></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="/app.js" type="module"></script>
 </body>
 </html>
-

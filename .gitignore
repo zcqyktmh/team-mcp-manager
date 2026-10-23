@@ -6,4 +6,3 @@ data/
 !.env.example
 preview*.png
 *.log
-
